@@ -8,6 +8,9 @@ public class ImportPathResolverTests
 {
     private static readonly DateTime Taken = new(2026, 3, 15, 14, 30, 22);
 
+    // Built with Path.Combine so expectations hold on both Windows and Unix separators.
+    private static readonly string Root = Path.Combine(Path.GetTempPath(), "photos");
+
     private static PhotoImportCandidate Candidate(string? cameraModel = "PIXPRO FZ55") => new()
     {
         SourcePath = "/media/camera/DCIM/100KODAK/IMG_0001.JPG",
@@ -22,22 +25,22 @@ public class ImportPathResolverTests
         FileNamingPreset preset = FileNamingPreset.CompactDateTime,
         bool appendOriginal = true) => new()
     {
-        DestinationRootPath = "/photos",
+        DestinationRootPath = Root,
         OrganizationScheme = scheme,
         NamingPreset = preset,
         AppendOriginalFileName = appendOriginal,
     };
 
     [Theory]
-    [InlineData(FolderOrganizationScheme.Flat, "/photos")]
-    [InlineData(FolderOrganizationScheme.YearMonth, "/photos/2026/03")]
-    [InlineData(FolderOrganizationScheme.YearMonthDay, "/photos/2026/03/15")]
-    [InlineData(FolderOrganizationScheme.ByCameraModel, "/photos/PIXPRO FZ55")]
-    public void ResolveDestinationFolder_FollowsScheme(FolderOrganizationScheme scheme, string expected)
+    [InlineData(FolderOrganizationScheme.Flat, new string[0])]
+    [InlineData(FolderOrganizationScheme.YearMonth, new[] { "2026", "03" })]
+    [InlineData(FolderOrganizationScheme.YearMonthDay, new[] { "2026", "03", "15" })]
+    [InlineData(FolderOrganizationScheme.ByCameraModel, new[] { "PIXPRO FZ55" })]
+    public void ResolveDestinationFolder_FollowsScheme(FolderOrganizationScheme scheme, string[] expectedSubfolders)
     {
         var folder = ImportPathResolver.ResolveDestinationFolder(Candidate(), Settings(scheme));
 
-        Assert.Equal(expected.Replace('/', Path.DirectorySeparatorChar), folder);
+        Assert.Equal(Path.Combine([Root, .. expectedSubfolders]), folder);
     }
 
     [Fact]
@@ -45,7 +48,7 @@ public class ImportPathResolverTests
     {
         var folder = ImportPathResolver.ResolveDestinationFolder(Candidate(cameraModel: null), Settings(FolderOrganizationScheme.ByCameraModel));
 
-        Assert.Equal(Path.Combine("/photos", "Unknown Camera"), folder);
+        Assert.Equal(Path.Combine(Root, "Unknown Camera"), folder);
     }
 
     [Theory]
@@ -68,7 +71,7 @@ public class ImportPathResolverTests
             // Thai uses the Buddhist calendar (year 2569 for 2026) — folder/file names must not.
             CultureInfo.CurrentCulture = new CultureInfo("th-TH");
 
-            Assert.Equal(Path.Combine("/photos", "2026", "03"), ImportPathResolver.ResolveDestinationFolder(Candidate(), Settings()));
+            Assert.Equal(Path.Combine(Root, "2026", "03"), ImportPathResolver.ResolveDestinationFolder(Candidate(), Settings()));
             Assert.Equal("20260315_143022.JPG", ImportPathResolver.ResolveDestinationFileName(Candidate(), Settings(appendOriginal: false)));
         }
         finally
@@ -80,16 +83,18 @@ public class ImportPathResolverTests
     [Fact]
     public void ResolveNonCollidingPath_AppendsCounterUntilFree()
     {
-        var taken = new HashSet<string> { "/photos/a.jpg", "/photos/a_1.jpg" };
+        var taken = new HashSet<string> { Path.Combine(Root, "a.jpg"), Path.Combine(Root, "a_1.jpg") };
 
-        var path = ImportPathResolver.ResolveNonCollidingPath("/photos/a.jpg", taken.Contains);
+        var path = ImportPathResolver.ResolveNonCollidingPath(Path.Combine(Root, "a.jpg"), taken.Contains);
 
-        Assert.Equal(Path.Combine("/photos", "a_2.jpg"), path);
+        Assert.Equal(Path.Combine(Root, "a_2.jpg"), path);
     }
 
     [Fact]
     public void ResolveNonCollidingPath_KeepsFreePath()
     {
-        Assert.Equal("/photos/a.jpg", ImportPathResolver.ResolveNonCollidingPath("/photos/a.jpg", _ => false));
+        var free = Path.Combine(Root, "a.jpg");
+
+        Assert.Equal(free, ImportPathResolver.ResolveNonCollidingPath(free, _ => false));
     }
 }

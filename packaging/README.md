@@ -5,16 +5,21 @@ whenever a `v*` tag is pushed. Nothing needs to be built by hand.
 
 ## Cutting a release
 
-1. Bump `<Version>` in `charmera-importer/charmera-importer.csproj` (used for local builds;
-   CI overrides it with the tag's version anyway).
+`main` is protected: every change, releases included, lands through a pull request
+with green CI (Linux + Windows). To release:
+
+1. On a branch, bump `<Version>` in `charmera-importer/charmera-importer.csproj` (used for
+   local builds; CI overrides it with the tag's version anyway).
 2. Move the `[Unreleased]` notes in `CHANGELOG.md` under a new `## [x.y.z] - YYYY-MM-DD`
    heading. The workflow **fails** without that section, because the GitHub release notes
    come from it.
-3. Commit, then tag and push:
+3. Open a PR, wait for CI, merge it. Then tag the merged commit on `main` and push the tag
+   (tags aren't covered by branch protection):
 
    ```bash
-   git tag v0.2.0
-   git push origin main v0.2.0
+   git switch main && git pull
+   git tag -a v0.4.0 -m "Charmera Importer 0.4.0"
+   git push origin v0.4.0
    ```
 
 The workflow runs the tests, then builds on Linux and Windows runners in parallel, and

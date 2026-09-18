@@ -9,6 +9,8 @@ device) with automatic EXIF-based organization and duplicate detection.
 ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)
 
+![Charmera Importer main window](docs/images/screenshot.png)
+
 ## About
 
 Charmera Importer was built to solve a small, specific annoyance: getting

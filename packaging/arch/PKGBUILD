@@ -5,7 +5,7 @@
 # its checksum from the release's SHA256SUMS; to build this file by hand: `makepkg -si`.
 
 pkgname=charmera-importer-bin
-pkgver=0.5.0
+pkgver=0.5.1
 pkgrel=1
 pkgdesc="Photo and video importer for the Kodak Charmera that repairs the camera's broken metadata"
 arch=('x86_64')
@@ -20,7 +20,7 @@ conflicts=('charmera-importer')
 # would corrupt it.
 options=('!strip' '!debug')
 source=("${pkgname}-${pkgver}.tar.gz::${url}/releases/download/v${pkgver}/charmera-importer-${pkgver}-linux-x64.tar.gz")
-sha256sums=('f5d07155639216f287d8dd649bc37e0ce568167951c784d67819bc899eb7f2f4')
+sha256sums=('83e8914027a65f23838b985282443d4cb2513b6937afa07f9f68139ccfad9d4b')
 
 package() {
   install -Dm755 charmera-importer "${pkgdir}/opt/charmera-importer/charmera-importer"

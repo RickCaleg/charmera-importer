@@ -11,6 +11,38 @@ device) with automatic EXIF-based organization and duplicate detection.
 
 ![Charmera Importer main window](docs/images/screenshot.png)
 
+## Fixes the Kodak Charmera's broken photo metadata
+
+The [Kodak Charmera](https://en.wikipedia.org/wiki/Kodak_Charmera) keychain camera
+writes **defective EXIF metadata** into every photo. Most photo apps then show the
+wrong date, file the pictures under the day you copied them, or report the wrong
+resolution. Charmera Importer detects Charmera photos automatically and **repairs
+the metadata of each imported copy**:
+
+| Charmera defect | What you'd see elsewhere | What the importer writes |
+|---|---|---|
+| Capture date stored as `2026:03:03:12:16:29` instead of the standard `2026:03:03 12:16:29` | No capture date: photos sorted and filed by the day you copied them | The same date in the standard format, so every app reads it |
+| `ExifImageWidth/Height` of **640×480** on **1440×1080** photos | Wrong resolution in photo libraries | The real size, read from the JPEG frame |
+| Corrupt MakerNote block with invalid offsets | Metadata editors refuse to touch the file | A clean EXIF block; the broken MakerNote is dropped |
+| No camera make/model | "Unknown camera" | `Kodak` / `Charmera`, plus the published lens info (35 mm-equiv, f/2.4) |
+
+- **Only the metadata changes.** The image data is copied byte for byte, so the pixels
+  are identical. This was verified by decoding and comparing them.
+- **The camera is never modified.** Repairs happen on the imported copy; the original
+  file on the card stays untouched.
+- **Automatic detection, and you can turn it off.** Charmera photos are recognized by
+  the Generalplus `GPEncoder` signature the camera embeds, whatever the card is named.
+  The repair is on by default and can be switched off under *Destination*.
+- **Correct folders and names.** Because the real capture date is recovered, photos
+  land in the right year/month folders and get the right date-based file names.
+
+The camera's clock has no time zone, so dates are kept as the local time the camera
+recorded. The defects and the repair approach are documented by
+[jphastings/charmera](https://github.com/jphastings/charmera) and
+[RAIT-09/kodak-charmera-exif-fixer](https://github.com/RAIT-09/kodak-charmera-exif-fixer)
+(both MIT). This app is an independent, dependency-free C# implementation
+(`Services/CharmeraExif.cs`), covered by tests that reproduce each defect.
+
 ## About
 
 Charmera Importer was built to solve a small, specific annoyance: getting
@@ -25,14 +57,13 @@ already been imported before, based on file content, not just the filename.
 
 ## Features
 
-- **Removable device detection** — lists USB mass-storage devices on Linux and
-  Windows so you can pick the right one (no more guessing which mount point is
-  the camera).
+- **Kodak Charmera metadata repair** — see [above](#fixes-the-kodak-charmeras-broken-photo-metadata).
+- **Removable device detection** — detects the camera as soon as it's plugged in (Linux
+  and Windows), and selects it automatically when it's the only one.
 - **Thumbnail browser** — scans the device's `DCIM` folder and shows photos as
   a grid of thumbnails, loaded progressively in the background.
-- **EXIF metadata** — reads camera make/model, capture date, dimensions, and
-  the full EXIF tag dump for each photo (when the camera actually writes it —
-  see [Known limitations](#known-limitations)).
+- **EXIF metadata** — reads camera make/model, capture date and dimensions (taken from
+  the JPEG frame, which can't be wrong), plus the full EXIF tag dump for each photo.
 - **Flexible organization** — choose how imported photos are organized:
   by year/month, year/month/day, by camera model, or a single flat folder.
 - **Configurable file naming** — rename files based on capture date/time, with
@@ -52,7 +83,7 @@ already been imported before, based on file content, not just the filename.
   download's SHA-256 checksum.
 - **Language selection** — the UI auto-detects a supported language from the
   OS locale on first run (currently English and Portuguese), and remembers
-  your choice if you change it from the picker in the header.
+  your choice if you change it in Settings.
 
 ## Installation
 
@@ -113,15 +144,18 @@ page. See [packaging/README.md](packaging/README.md) for how releases are built.
 
 ## Usage
 
-1. Connect your camera (or any USB drive) and select it from the **Dispositivo**
-   dropdown at the top of the window.
-2. Photos found on the device (under its `DCIM` folder, if present) appear as
-   thumbnails, with EXIF details filling in as they're read.
-3. Click a photo to see its EXIF details in the right-hand panel.
-4. Pick a destination folder, a folder organization scheme, and a file-naming
-   preset in the left sidebar.
-5. Click **Importar fotos**. Already-imported photos (matched by content hash,
-   not filename) are automatically skipped and marked as duplicates.
+The left panel walks through the import in three steps:
+
+1. **Camera** — plug the camera in. It's detected automatically (or pick it from the
+   list), and its photos appear as thumbnails. Click one to see its details.
+2. **Destination** — choose a folder, how to organize it and how to name the files. The
+   *Example path* shows where a photo will end up. The Charmera repair lives here too.
+3. **After import** — optionally delete the photos from the camera once they're safely
+   copied.
+
+Then click **Import N photos**. Photos imported before (matched by content, not file
+name) are skipped and marked as duplicates. Language, update checks and *About* are
+under the ⚙ button.
 
 ## Platform support
 
@@ -136,14 +170,16 @@ layout on most Linux desktops.
 
 ## Known limitations
 
-- Some cameras (including the Kodak PixPro this app was built against) don't
-  write make/model/date to EXIF at all — the app falls back to the file's
-  modification date for naming/organizing, and simply hides EXIF fields it
-  doesn't have data for, rather than showing them blank.
+- Cameras that write no capture date at all fall back to the file's modification date
+  for naming and organizing. EXIF fields a camera doesn't provide are hidden, not shown
+  blank.
+- Charmera **videos** (`.avi`) aren't imported yet. The camera also stamps them with a
+  wrong, hard-coded date (2010-06-29).
 - Thumbnails aren't generated for RAW formats (`.cr2`, `.nef`, `.arw`, `.dng`) —
   EXIF is still read for these, just no preview image.
-- Automated tests cover the pure logic (path/naming rules, update version and checksum
-  handling), not the UI or device detection. Those are still verified by hand.
+- Automated tests cover the logic (path/naming rules, Charmera metadata repair and import,
+  update version and checksum handling), not the UI or device detection. Those are
+  still verified by hand.
 - Only English and Portuguese are translated so far — see `Localization/Translations.cs`
   to add another language (it's just a dictionary of strings per language code).
 

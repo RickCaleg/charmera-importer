@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\charmera-icon.ico</ApplicationIcon>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <Product>Charmera Importer</Product>
     <Authors>Richardson Calegari Saconi</Authors>
     <Description>Photo and video importer for the Kodak Charmera that repairs the camera's broken metadata, organizes files by capture date, and skips duplicates.</Description>

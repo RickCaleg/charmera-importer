@@ -19,6 +19,11 @@ public sealed class ExifService : IExifService
         {
             ct.ThrowIfCancellationRequested();
 
+            if (CharmeraAvi.IsAviName(filePath))
+            {
+                return ReadVideo(filePath);
+            }
+
             // Charmera files get our own tolerant reading: their EXIF is structurally broken, so
             // generic readers miss the date and report the wrong dimensions (see CharmeraExif).
             var charmera = CharmeraExif.IsCharmeraFile(filePath) ? TryReadCharmera(filePath) : null;
@@ -110,6 +115,64 @@ public sealed class ExifService : IExifService
                 allTags,
                 charmera is not null);
         }, ct);
+    }
+
+    // Videos have no EXIF; their facts come from the AVI headers. The recording date is the
+    // file's timestamp (written by the camera), because the one inside the file is the
+    // Charmera's hard-coded 2010-06-29 — unless the file holds a genuine date.
+    private static PhotoExifData? ReadVideo(string filePath)
+    {
+        CharmeraAviInfo info;
+        try
+        {
+            info = CharmeraAvi.Read(filePath);
+        }
+        catch
+        {
+            return null;
+        }
+
+        var embedded = info.EmbeddedDate;
+        var date = embedded is not null && !CharmeraAvi.HasBogusDate(info)
+            ? embedded
+            : File.GetLastWriteTime(filePath);
+
+        var tags = new Dictionary<string, string>();
+        if (info.Duration is { } duration)
+        {
+            tags["AVI - Duration"] = duration.ToString(@"m\:ss\.f", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (info.FramesPerSecond is { } fps)
+        {
+            tags["AVI - Frame rate"] = $"{fps:0.##} fps";
+        }
+
+        if (info.VideoCodec is { Length: > 0 } codec)
+        {
+            tags["AVI - Video codec"] = codec;
+        }
+
+        if (info.AudioSampleRate is { } rate)
+        {
+            tags["AVI - Audio"] = $"PCM {rate} Hz, {info.AudioBitsPerSample} bit, {info.AudioChannels} ch";
+        }
+
+        foreach (var field in info.DateFields)
+        {
+            tags[$"AVI - {field.ChunkId} (embedded date)"] = field.Value.Trim('\0', ' ', '\n');
+        }
+
+        return new PhotoExifData(
+            CharmeraExif.CameraMake,
+            CharmeraExif.CameraModel,
+            date,
+            info.Width > 0 ? info.Width : null,
+            info.Height > 0 ? info.Height : null,
+            null, null, null, null, null, null,
+            tags,
+            IsCharmera: true,
+            Duration: info.Duration);
     }
 
     private static CharmeraExifInfo? TryReadCharmera(string filePath)

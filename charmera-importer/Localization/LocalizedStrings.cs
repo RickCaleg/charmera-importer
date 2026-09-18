@@ -66,6 +66,11 @@ public sealed class LocalizedStrings : ObservableObject
     public string ImportedRepairedMessage => Get("Import_SuccessRepaired");
     public string AppSubtitle => Get("App_Subtitle");
     public string DetailCharmeraNote => Get("Detail_CharmeraNote");
+    public string DetailDuration => Get("Detail_Duration");
+    public string DetailVideoTitle => Get("Detail_VideoTitle");
+    public string DetailVideoNote => Get("Detail_VideoNote");
+    public string CardVideo => Get("Card_Video");
+    public string AboutFix5 => Get("About_Fix5");
     public string SettingsAbout => Get("Settings_About");
     public string AboutTitle => Get("About_Title");
     public string AboutTagline => Get("About_Tagline");
@@ -123,8 +128,13 @@ public sealed class LocalizedStrings : ObservableObject
     public string UpdateCheckButton => Get("Update_CheckButton");
     public string UpdateAutoCheck => Get("Update_AutoCheck");
 
-    public string PhotosCount(int count) => string.Format(Get("Content_PhotosCountFormat"), count);
-    public string PhotosFound(int count) => string.Format(Get("Status_PhotosFoundFormat"), count);
+    // "12 photos · 3 videos", "1 video", ...; videos are only mentioned when there are some.
+    public string MediaSummary(int photos, int videos) => videos == 0
+        ? PhotoCount(photos)
+        : photos == 0 ? VideoCount(videos) : PhotoCount(photos) + Get("Media_Separator") + VideoCount(videos);
+
+    private string PhotoCount(int n) => n == 1 ? Get("Media_PhotoOne") : string.Format(Get("Media_PhotoMany"), n);
+    private string VideoCount(int n) => n == 1 ? Get("Media_VideoOne") : string.Format(Get("Media_VideoMany"), n);
     public string Importing(string fileName, int completed, int total) =>
         string.Format(Get("Status_ImportingFormat"), fileName, completed, total);
     public string ImportError(string message) => string.Format(Get("Import_ErrorFormat"), message);
@@ -134,11 +144,13 @@ public sealed class LocalizedStrings : ObservableObject
     public string UpdateDownloading(double fraction) => string.Format(Get("Update_DownloadingFormat"), fraction);
     public string UpdateError(string message) => string.Format(Get("Update_ErrorFormat"), message);
     public string UpdateCheckFailed(string message) => string.Format(Get("Update_CheckFailedFormat"), message);
-    public string ImportButton(int count) => count switch
+    // "Import 12 photos and 3 videos".
+    public string ImportButton(int photos, int videos) => (photos, videos) switch
     {
-        0 => ImportButtonDefault,
-        1 => Get("Import_ButtonOne"),
-        _ => string.Format(Get("Import_ButtonFormat"), count),
+        (0, 0) => ImportButtonDefault,
+        (_, 0) => string.Format(Get("Import_ButtonItemsFormat"), PhotoCount(photos)),
+        (0, _) => string.Format(Get("Import_ButtonItemsFormat"), VideoCount(videos)),
+        _ => string.Format(Get("Import_ButtonItemsFormat"), PhotoCount(photos) + Get("Media_And") + VideoCount(videos)),
     };
     public string VersionOnly(string version) => string.Format(Get("About_VersionFormat"), version);
     public string VersionLabel(string version) => string.Format(Get("Update_VersionFormat"), version);

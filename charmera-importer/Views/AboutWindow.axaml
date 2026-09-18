@@ -68,6 +68,11 @@
                                       StrokeThickness="2" Data="M1,5 L4.5,8.5 L11,1" VerticalAlignment="Top" Margin="0,4,0,0" />
                                 <TextBlock Grid.Column="1" Classes="fixItem" Text="{loc:Loc AboutFix4}" />
                             </Grid>
+                            <Grid ColumnDefinitions="18,*">
+                                <Path Classes="lineIcon" Width="11" Height="9" Stroke="{StaticResource KodakRedBrush}"
+                                      StrokeThickness="2" Data="M1,5 L4.5,8.5 L11,1" VerticalAlignment="Top" Margin="0,4,0,0" />
+                                <TextBlock Grid.Column="1" Classes="fixItem" Text="{loc:Loc AboutFix5}" />
+                            </Grid>
                         </StackPanel>
                         <TextBlock Classes="caption" FontSize="12" Text="{loc:Loc AboutCharmeraFootnote}" />
                     </StackPanel>

@@ -65,6 +65,12 @@ public sealed class ImportService : IImportService
         var destinationFileName = ImportPathResolver.ResolveDestinationFileName(candidate, settings);
         var desiredPath = Path.Combine(destinationFolder, destinationFileName);
 
+        if (candidate.IsVideo)
+        {
+            await ImportVideoAsync(candidate, settings, destinationFolder, desiredPath, ct);
+            return;
+        }
+
         // Written with repaired EXIF (see CharmeraExif); the camera's file is never modified.
         // Only a file the repair can't parse (null) is copied verbatim.
         var repaired = await TryRepairCharmeraAsync(candidate, ct);
@@ -103,6 +109,71 @@ public sealed class ImportService : IImportService
             ? LocalizedStrings.Instance.ImportedMessage
             : LocalizedStrings.Instance.ImportedRepairedMessage;
         TryDeleteSource(candidate, settings);
+    }
+
+    // Videos are too large to stage in memory, so the copy is made to a temporary file next to
+    // its destination, repaired there when it carries the Charmera's fake 2010-06-29 date,
+    // hashed (to recognise an identical file already at the destination) and then renamed
+    // into place. Everything else in the video is copied byte for byte.
+    private async Task ImportVideoAsync(
+        PhotoImportCandidate candidate, ImportSettings settings, string destinationFolder, string desiredPath, CancellationToken ct)
+    {
+        Directory.CreateDirectory(destinationFolder);
+        var tempPath = desiredPath + ".charmera-tmp";
+        try
+        {
+            File.Copy(candidate.SourcePath, tempPath, overwrite: true);
+            var repaired = TryRepairVideoDate(tempPath, candidate);
+            if (candidate.FileSystemDateModified is { } modified)
+            {
+                File.SetLastWriteTime(tempPath, modified);
+            }
+
+            var outputHash = await hashingService.ComputeSha256Async(tempPath, ct);
+            if (File.Exists(desiredPath) && await IsSameContentAsync(desiredPath, outputHash, new FileInfo(tempPath).Length, ct))
+            {
+                candidate.Status = ImportStatus.Duplicate;
+                candidate.StatusMessage = LocalizedStrings.Instance.AlreadyAtDestinationMessage;
+                TryDeleteSource(candidate, settings);
+                return;
+            }
+
+            var destinationPath = ImportPathResolver.ResolveNonCollidingPath(desiredPath, File.Exists);
+            File.Move(tempPath, destinationPath, overwrite: false);
+
+            await historyService.RecordImportAsync(
+                new ImportHistoryEntry(candidate.Sha256Hash!, candidate.FileName, destinationPath, DateTime.UtcNow, candidate.FileSizeBytes),
+                ct);
+
+            candidate.Status = ImportStatus.Imported;
+            candidate.StatusMessage = repaired
+                ? LocalizedStrings.Instance.ImportedRepairedMessage
+                : LocalizedStrings.Instance.ImportedMessage;
+            TryDeleteSource(candidate, settings);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    // Replaces the fake date with the real recording time (the one used to name and file the
+    // video). A file that can't be parsed, or has no fake date, keeps its bytes as they are.
+    private static bool TryRepairVideoDate(string copyPath, PhotoImportCandidate candidate)
+    {
+        try
+        {
+            var info = CharmeraAvi.Read(copyPath);
+            return CharmeraAvi.HasBogusDate(info)
+                && CharmeraAvi.PatchDates(copyPath, info, candidate.ResolveDate()) > 0;
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or EndOfStreamException)
+        {
+            return false;
+        }
     }
 
     private async Task<bool> IsSameContentAsync(string existingPath, string expectedHash, long expectedSize, CancellationToken ct)

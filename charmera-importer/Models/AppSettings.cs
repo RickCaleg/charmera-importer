@@ -9,4 +9,5 @@ public sealed record AppSettings(
     string? DestinationRootPath,
     FolderOrganizationScheme? OrganizationScheme,
     FileNamingPreset? NamingPreset,
-    bool AppendOriginalFileName = true);
+    bool AppendOriginalFileName = true,
+    bool CheckForUpdates = true);

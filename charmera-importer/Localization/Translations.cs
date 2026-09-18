@@ -59,6 +59,22 @@ internal static class Translations
         ["StatusLabel_Pending"] = "Pendente",
 
         ["FolderPicker_Title"] = "Escolher pasta de destino",
+
+        ["Update_AvailableFormat"] = "Nova versão disponível: {0} (você está na {1})",
+        ["Update_InstallButton"] = "Atualizar agora",
+        ["Update_DownloadButton"] = "Baixar",
+        ["Update_ReleaseNotesButton"] = "Novidades",
+        ["Update_DismissTooltip"] = "Dispensar",
+        ["Update_ManualNote"] = "Esta instalação não pode se atualizar sozinha (ex.: pacote .deb/.rpm) — baixe a nova versão na página da release.",
+        ["Update_DownloadingFormat"] = "Baixando atualização... {0:P0}",
+        ["Update_Installing"] = "Instalando atualização, o app vai reiniciar...",
+        ["Update_ErrorFormat"] = "Falha ao atualizar: {0}",
+        ["Update_UpToDate"] = "Você já está na versão mais recente.",
+        ["Update_CheckFailedFormat"] = "Não foi possível verificar atualizações: {0}",
+        ["Update_Checking"] = "Verificando atualizações...",
+        ["Update_CheckButton"] = "Verificar atualizações",
+        ["Update_AutoCheck"] = "Verificar atualizações ao abrir",
+        ["Update_VersionFormat"] = "Versão {0}",
     };
 
     private static readonly Dictionary<string, string> English = new()
@@ -113,6 +129,22 @@ internal static class Translations
         ["StatusLabel_Pending"] = "Pending",
 
         ["FolderPicker_Title"] = "Choose destination folder",
+
+        ["Update_AvailableFormat"] = "New version available: {0} (you have {1})",
+        ["Update_InstallButton"] = "Update now",
+        ["Update_DownloadButton"] = "Download",
+        ["Update_ReleaseNotesButton"] = "What's new",
+        ["Update_DismissTooltip"] = "Dismiss",
+        ["Update_ManualNote"] = "This installation can't update itself (e.g. a .deb/.rpm package) — download the new version from the release page.",
+        ["Update_DownloadingFormat"] = "Downloading update... {0:P0}",
+        ["Update_Installing"] = "Installing update, the app will restart...",
+        ["Update_ErrorFormat"] = "Update failed: {0}",
+        ["Update_UpToDate"] = "You're on the latest version.",
+        ["Update_CheckFailedFormat"] = "Couldn't check for updates: {0}",
+        ["Update_Checking"] = "Checking for updates...",
+        ["Update_CheckButton"] = "Check for updates",
+        ["Update_AutoCheck"] = "Check for updates on startup",
+        ["Update_VersionFormat"] = "Version {0}",
     };
 
     public static IReadOnlyDictionary<string, string> Get(string languageCode) => languageCode switch

@@ -72,6 +72,30 @@
             </Grid>
         </Border>
 
+        <!-- Update banner -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource KodakYellowBrush}" Padding="28,10"
+                IsVisible="{Binding ShowUpdateBanner}">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="4">
+                    <TextBlock Text="{Binding UpdateBannerText}" FontSize="13.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource InkPrimaryBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{loc:Loc UpdateManualNote}" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{StaticResource InkPrimaryBrush}" IsVisible="{Binding IsManualUpdate}" />
+                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding UpdateDownloadProgress}" MaxWidth="420"
+                                 HorizontalAlignment="Left" IsVisible="{Binding IsInstallingUpdate}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center"
+                            Margin="16,0,0,0">
+                    <Button Classes="secondary" Content="{loc:Loc UpdateReleaseNotesButton}"
+                            Command="{Binding OpenReleaseNotesCommand}" />
+                    <Button Classes="primary" Content="{Binding UpdateActionLabel}"
+                            Command="{Binding InstallUpdateCommand}" />
+                    <Button Classes="icon" Content="&#10005;" Command="{Binding DismissUpdateCommand}"
+                            ToolTip.Tip="{loc:Loc UpdateDismissTooltip}" IsEnabled="{Binding !IsInstallingUpdate}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Sidebar -->
         <Border DockPanel.Dock="Left" Width="340" Background="{StaticResource SurfaceCardBrush}"
                 BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,1,0">
@@ -135,6 +159,20 @@
                                      Value="{Binding ImportProgressCurrent}" IsVisible="{Binding IsImporting}" />
                         <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="12.5"
                                    Foreground="{StaticResource InkSecondaryBrush}" />
+                    </StackPanel>
+
+                    <Border Height="1" Background="{StaticResource BorderSubtleBrush}" />
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding CurrentVersionLabel}" FontSize="12"
+                                   Foreground="{StaticResource InkTertiaryBrush}" />
+                        <CheckBox Content="{loc:Loc UpdateAutoCheck}"
+                                  IsChecked="{Binding CheckForUpdatesAutomatically}" />
+                        <Button Classes="secondary" Content="{loc:Loc UpdateCheckButton}" HorizontalAlignment="Stretch"
+                                Command="{Binding CheckForUpdatesCommand}" />
+                        <TextBlock Text="{Binding UpdateStatusMessage}" TextWrapping="Wrap" FontSize="12"
+                                   Foreground="{StaticResource InkSecondaryBrush}"
+                                   IsVisible="{Binding UpdateStatusMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
                     </StackPanel>
 
                 </StackPanel>

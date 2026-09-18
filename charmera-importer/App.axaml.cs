@@ -54,8 +54,10 @@ public partial class App : Application
                     new ImportService(hashingService, historyService),
                     historyService,
                     settingsService,
+                    new GitHubUpdateService(),
                     initialSettings,
-                    initialLanguage),
+                    initialLanguage,
+                    () => desktop.Shutdown()),
             };
         }
 

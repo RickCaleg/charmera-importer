@@ -1,10 +1,11 @@
 using System;
+using System.Globalization;
 
 namespace charmera_importer.Models;
 
 public sealed record NamingPresetOption(FileNamingPreset Value, string DisplayName, string DateFormat)
 {
-    public string Format(DateTime date) => date.ToString(DateFormat);
+    public string Format(DateTime date) => date.ToString(DateFormat, CultureInfo.InvariantCulture);
 
     public static readonly NamingPresetOption[] All =
     [

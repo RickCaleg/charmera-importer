@@ -68,12 +68,29 @@ public sealed class LocalizedStrings : ObservableObject
 
     public string FolderPickerTitle => Get("FolderPicker_Title");
 
+    public string UpdateInstallButton => Get("Update_InstallButton");
+    public string UpdateDownloadButton => Get("Update_DownloadButton");
+    public string UpdateReleaseNotesButton => Get("Update_ReleaseNotesButton");
+    public string UpdateDismissTooltip => Get("Update_DismissTooltip");
+    public string UpdateManualNote => Get("Update_ManualNote");
+    public string UpdateInstalling => Get("Update_Installing");
+    public string UpdateUpToDate => Get("Update_UpToDate");
+    public string UpdateChecking => Get("Update_Checking");
+    public string UpdateCheckButton => Get("Update_CheckButton");
+    public string UpdateAutoCheck => Get("Update_AutoCheck");
+
     public string PhotosCount(int count) => string.Format(Get("Content_PhotosCountFormat"), count);
     public string PhotosFound(int count) => string.Format(Get("Status_PhotosFoundFormat"), count);
     public string Importing(string fileName, int completed, int total) =>
         string.Format(Get("Status_ImportingFormat"), fileName, completed, total);
     public string ImportError(string message) => string.Format(Get("Import_ErrorFormat"), message);
     public string DeleteFailedNote(string message) => string.Format(Get("Import_DeleteFailedFormat"), message);
+    public string UpdateAvailable(string newVersion, string currentVersion) =>
+        string.Format(Get("Update_AvailableFormat"), newVersion, currentVersion);
+    public string UpdateDownloading(double fraction) => string.Format(Get("Update_DownloadingFormat"), fraction);
+    public string UpdateError(string message) => string.Format(Get("Update_ErrorFormat"), message);
+    public string UpdateCheckFailed(string message) => string.Format(Get("Update_CheckFailedFormat"), message);
+    public string VersionLabel(string version) => string.Format(Get("Update_VersionFormat"), version);
 
     public string OrganizationDisplayName(FolderOrganizationScheme scheme) => scheme switch
     {

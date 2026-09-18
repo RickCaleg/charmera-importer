@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using charmera_importer.Models;
@@ -18,9 +19,9 @@ public static class ImportPathResolver
             FolderOrganizationScheme.Flat =>
                 settings.DestinationRootPath,
             FolderOrganizationScheme.YearMonth =>
-                Path.Combine(settings.DestinationRootPath, date.ToString("yyyy"), date.ToString("MM")),
+                Path.Combine(settings.DestinationRootPath, date.ToString("yyyy", CultureInfo.InvariantCulture), date.ToString("MM", CultureInfo.InvariantCulture)),
             FolderOrganizationScheme.YearMonthDay =>
-                Path.Combine(settings.DestinationRootPath, date.ToString("yyyy"), date.ToString("MM"), date.ToString("dd")),
+                Path.Combine(settings.DestinationRootPath, date.ToString("yyyy", CultureInfo.InvariantCulture), date.ToString("MM", CultureInfo.InvariantCulture), date.ToString("dd", CultureInfo.InvariantCulture)),
             FolderOrganizationScheme.ByCameraModel =>
                 Path.Combine(settings.DestinationRootPath, SanitizeForFileSystem(candidate.Exif?.CameraModel ?? "Unknown Camera")),
             _ => throw new ArgumentOutOfRangeException(nameof(settings)),

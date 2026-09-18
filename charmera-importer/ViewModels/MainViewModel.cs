@@ -24,6 +24,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly IImportService importService;
     private readonly IImportHistoryService historyService;
     private readonly IAppSettingsService settingsService;
+    private readonly IUpdateService updateService;
+    private readonly Action requestShutdown;
 
     private CancellationTokenSource? scanCts;
     private bool suppressSettingsPersistence;
@@ -78,6 +80,37 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string? StatusMessage { get; set; }
 
+    [ObservableProperty]
+    public partial bool CheckForUpdatesAutomatically { get; set; } = true;
+
+    [ObservableProperty]
+    public partial UpdateInfo? AvailableUpdate { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsUpdateDismissed { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsCheckingForUpdates { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsInstallingUpdate { get; set; }
+
+    [ObservableProperty]
+    public partial double UpdateDownloadProgress { get; set; }
+
+    [ObservableProperty]
+    public partial string? UpdateStatusMessage { get; set; }
+
+    public bool ShowUpdateBanner => AvailableUpdate is not null && !IsUpdateDismissed;
+    public bool IsManualUpdate => AvailableUpdate?.InstallMode == UpdateInstallMode.Manual;
+    public string UpdateBannerText => AvailableUpdate is null
+        ? string.Empty
+        : LocalizedStrings.Instance.UpdateAvailable(AvailableUpdate.Version.ToString(3), updateService.CurrentVersion.ToString(3));
+    public string UpdateActionLabel => IsManualUpdate
+        ? LocalizedStrings.Instance.UpdateDownloadButton
+        : LocalizedStrings.Instance.UpdateInstallButton;
+    public string CurrentVersionLabel => LocalizedStrings.Instance.VersionLabel(updateService.CurrentVersion.ToString(3));
+
     public bool ShowEmptyState => Photos.Count == 0 && !IsScanning;
     public string PhotosCountLabel => LocalizedStrings.Instance.PhotosCount(Photos.Count);
     public string DestinationRootPathDisplay => DestinationRootPath ?? LocalizedStrings.Instance.NoDestinationSelected;
@@ -90,8 +123,10 @@ public partial class MainViewModel : ViewModelBase
         IImportService importService,
         IImportHistoryService historyService,
         IAppSettingsService settingsService,
+        IUpdateService updateService,
         AppSettings initialSettings,
-        LanguageOption initialLanguage)
+        LanguageOption initialLanguage,
+        Action requestShutdown)
     {
         this.deviceService = deviceService;
         this.scannerService = scannerService;
@@ -100,6 +135,8 @@ public partial class MainViewModel : ViewModelBase
         this.importService = importService;
         this.historyService = historyService;
         this.settingsService = settingsService;
+        this.updateService = updateService;
+        this.requestShutdown = requestShutdown;
 
         // LocalizedStrings was already applied to initialLanguage by the caller (App.axaml.cs) —
         // restoring saved preferences here just reflects that, without re-persisting them right
@@ -113,12 +150,17 @@ public partial class MainViewModel : ViewModelBase
             ?? NamingPresets.First();
         DestinationRootPath = initialSettings.DestinationRootPath;
         AppendOriginalFileName = initialSettings.AppendOriginalFileName;
+        CheckForUpdatesAutomatically = initialSettings.CheckForUpdates;
         suppressSettingsPersistence = false;
 
         LocalizedStrings.Instance.PropertyChanged += OnLocalizationChanged;
 
         _ = historyService.LoadAsync();
         _ = RefreshDevicesCommand.ExecuteAsync(null);
+        if (CheckForUpdatesAutomatically)
+        {
+            _ = CheckForUpdatesInBackgroundAsync();
+        }
     }
 
     // Parameterless constructor kept only for the Avalonia XAML previewer's Design.DataContext.
@@ -130,8 +172,10 @@ public partial class MainViewModel : ViewModelBase
         new ImportService(new Sha256HashingService(), new JsonImportHistoryService(string.Empty)),
         new JsonImportHistoryService(string.Empty),
         new JsonAppSettingsService(string.Empty),
-        new AppSettings(null, null, null, null),
-        LanguageOption.English)
+        new GitHubUpdateService(),
+        new AppSettings(null, null, null, null, CheckForUpdates: false),
+        LanguageOption.English,
+        () => { })
     {
     }
 
@@ -139,6 +183,9 @@ public partial class MainViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(PhotosCountLabel));
         OnPropertyChanged(nameof(DestinationRootPathDisplay));
+        OnPropertyChanged(nameof(UpdateBannerText));
+        OnPropertyChanged(nameof(UpdateActionLabel));
+        OnPropertyChanged(nameof(CurrentVersionLabel));
         foreach (var photo in Photos)
         {
             photo.RefreshLocalizedText();
@@ -157,7 +204,8 @@ public partial class MainViewModel : ViewModelBase
             DestinationRootPath,
             SelectedOrganizationOption.Value,
             SelectedNamingPreset.Value,
-            AppendOriginalFileName);
+            AppendOriginalFileName,
+            CheckForUpdatesAutomatically);
 
         _ = settingsService.SaveAsync(settings);
     }
@@ -173,6 +221,114 @@ public partial class MainViewModel : ViewModelBase
     partial void OnSelectedNamingPresetChanged(NamingPresetOption value) => PersistSettings();
 
     partial void OnAppendOriginalFileNameChanged(bool value) => PersistSettings();
+
+    partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => PersistSettings();
+
+    partial void OnAvailableUpdateChanged(UpdateInfo? value)
+    {
+        OnPropertyChanged(nameof(ShowUpdateBanner));
+        OnPropertyChanged(nameof(IsManualUpdate));
+        OnPropertyChanged(nameof(UpdateBannerText));
+        OnPropertyChanged(nameof(UpdateActionLabel));
+        InstallUpdateCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsUpdateDismissedChanged(bool value) => OnPropertyChanged(nameof(ShowUpdateBanner));
+
+    partial void OnIsInstallingUpdateChanged(bool value)
+    {
+        InstallUpdateCommand.NotifyCanExecuteChanged();
+        ImportCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsCheckingForUpdatesChanged(bool value) => CheckForUpdatesCommand.NotifyCanExecuteChanged();
+
+    // Startup check: failures (offline, rate-limited) are silent — only a found update shows up.
+    private async Task CheckForUpdatesInBackgroundAsync()
+    {
+        try
+        {
+            AvailableUpdate = await updateService.CheckForUpdateAsync();
+        }
+        catch
+        {
+            // No network is a normal state for this app — nothing to report.
+        }
+    }
+
+    private bool CanCheckForUpdates() => !IsCheckingForUpdates;
+
+    [RelayCommand(CanExecute = nameof(CanCheckForUpdates))]
+    private async Task CheckForUpdatesAsync()
+    {
+        IsCheckingForUpdates = true;
+        UpdateStatusMessage = LocalizedStrings.Instance.UpdateChecking;
+        try
+        {
+            AvailableUpdate = await updateService.CheckForUpdateAsync();
+            IsUpdateDismissed = false;
+            UpdateStatusMessage = AvailableUpdate is null ? LocalizedStrings.Instance.UpdateUpToDate : null;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusMessage = LocalizedStrings.Instance.UpdateCheckFailed(ex.Message);
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    // Never while importing: replacing the app mid-copy would cut the import short.
+    private bool CanInstallUpdate() => AvailableUpdate is not null && !IsInstallingUpdate && !IsImporting;
+
+    [RelayCommand(CanExecute = nameof(CanInstallUpdate))]
+    private async Task InstallUpdateAsync()
+    {
+        if (AvailableUpdate is not { } update)
+        {
+            return;
+        }
+
+        if (update.InstallMode == UpdateInstallMode.Manual)
+        {
+            updateService.OpenReleasePage(update);
+            return;
+        }
+
+        IsInstallingUpdate = true;
+        UpdateDownloadProgress = 0;
+        UpdateStatusMessage = LocalizedStrings.Instance.UpdateDownloading(0);
+        var progress = new Progress<double>(fraction =>
+        {
+            UpdateDownloadProgress = fraction;
+            UpdateStatusMessage = LocalizedStrings.Instance.UpdateDownloading(fraction);
+        });
+
+        try
+        {
+            await updateService.InstallUpdateAsync(update, progress);
+            UpdateStatusMessage = LocalizedStrings.Instance.UpdateInstalling;
+            requestShutdown();
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusMessage = LocalizedStrings.Instance.UpdateError(ex.Message);
+            IsInstallingUpdate = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenReleaseNotes()
+    {
+        if (AvailableUpdate is { } update)
+        {
+            updateService.OpenReleasePage(update);
+        }
+    }
+
+    [RelayCommand]
+    private void DismissUpdate() => IsUpdateDismissed = true;
 
     [RelayCommand]
     private async Task RefreshDevicesAsync()
@@ -209,7 +365,11 @@ public partial class MainViewModel : ViewModelBase
         PersistSettings();
     }
 
-    partial void OnIsImportingChanged(bool value) => ImportCommand.NotifyCanExecuteChanged();
+    partial void OnIsImportingChanged(bool value)
+    {
+        ImportCommand.NotifyCanExecuteChanged();
+        InstallUpdateCommand.NotifyCanExecuteChanged();
+    }
 
     partial void OnIsScanningChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));
 
@@ -288,7 +448,7 @@ public partial class MainViewModel : ViewModelBase
     }
 
     private bool CanImport() =>
-        Photos.Count > 0 && !string.IsNullOrWhiteSpace(DestinationRootPath) && !IsImporting;
+        Photos.Count > 0 && !string.IsNullOrWhiteSpace(DestinationRootPath) && !IsImporting && !IsInstallingUpdate;
 
     [RelayCommand(CanExecute = nameof(CanImport))]
     private async Task ImportAsync()

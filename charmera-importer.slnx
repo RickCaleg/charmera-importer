@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/charmera-importer.Tests/charmera-importer.Tests.csproj" />
+  </Folder>
   <Project Path="charmera-importer/charmera-importer.csproj" />
 </Solution>

@@ -56,7 +56,7 @@ jobs:
           LINUX_BINARY=publish/linux/charmera-importer envsubst < packaging/nfpm.yaml > nfpm.resolved.yaml
           nfpm package --config nfpm.resolved.yaml --packager deb --target "dist/charmera-importer_${VERSION}_amd64.deb"
           nfpm package --config nfpm.resolved.yaml --packager rpm --target "dist/charmera-importer-${VERSION}-1.x86_64.rpm"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: dist/*
@@ -88,7 +88,7 @@ jobs:
           & $iscc "/DAppVersion=$env:VERSION" "/DSourceExe=$PWD\publish\windows\charmera-importer.exe" `
             "/DOutputDir=$PWD\dist" packaging\windows\charmera-importer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: dist/*

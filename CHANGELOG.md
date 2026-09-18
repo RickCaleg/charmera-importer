@@ -9,6 +9,8 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-18
+
 ### Added
 
 - **Kodak Charmera metadata repair.** Every imported photo gets repaired EXIF:

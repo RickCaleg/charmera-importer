@@ -8,7 +8,7 @@
     <Version>0.4.0</Version>
     <Product>Charmera Importer</Product>
     <Authors>Richardson Calegari Saconi</Authors>
-    <Description>Photo importer for the Kodak Charmera that repairs the camera's broken EXIF metadata, organizes photos by capture date, and skips duplicates.</Description>
+    <Description>Photo and video importer for the Kodak Charmera that repairs the camera's broken metadata, organizes files by capture date, and skips duplicates.</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -71,6 +71,7 @@ public sealed class LocalizedStrings : ObservableObject
     public string DetailVideoNote => Get("Detail_VideoNote");
     public string CardVideo => Get("Card_Video");
     public string AboutFix5 => Get("About_Fix5");
+    public string AboutFeature7 => Get("About_Feature7");
     public string SettingsAbout => Get("Settings_About");
     public string AboutTitle => Get("About_Title");
     public string AboutTagline => Get("About_Tagline");

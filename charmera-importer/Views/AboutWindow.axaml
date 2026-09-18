@@ -99,6 +99,7 @@
                             </Style>
                         </StackPanel.Styles>
                         <Grid ColumnDefinitions="18,*"><Border Classes="bullet" /><TextBlock Grid.Column="1" Classes="feature" Text="{loc:Loc AboutFeature1}" /></Grid>
+                        <Grid ColumnDefinitions="18,*"><Border Classes="bullet" /><TextBlock Grid.Column="1" Classes="feature" Text="{loc:Loc AboutFeature7}" /></Grid>
                         <Grid ColumnDefinitions="18,*"><Border Classes="bullet" /><TextBlock Grid.Column="1" Classes="feature" Text="{loc:Loc AboutFeature2}" /></Grid>
                         <Grid ColumnDefinitions="18,*"><Border Classes="bullet" /><TextBlock Grid.Column="1" Classes="feature" Text="{loc:Loc AboutFeature3}" /></Grid>
                         <Grid ColumnDefinitions="18,*"><Border Classes="bullet" /><TextBlock Grid.Column="1" Classes="feature" Text="{loc:Loc AboutFeature4}" /></Grid>

@@ -223,13 +223,16 @@ already been imported before, based on file content, not just the filename.
 ## Features
 
 - **Kodak Charmera metadata repair** — see [above](#why-this-app-exists-the-charmeras-broken-metadata).
+- **Videos too** — the Charmera's AVI videos are imported alongside photos, filed by their
+  real recording date (the fake 2010 date is corrected), with thumbnails and duration. See
+  [How videos are handled](#how-videos-are-handled).
 - **Charmera detection** — recognizes the camera as soon as it's plugged in (Linux and
   Windows), by content rather than by name, and selects it automatically.
-- **Thumbnail browser** — scans the device's `DCIM` folder and shows photos as
-  a grid of thumbnails, loaded progressively in the background.
+- **Thumbnail browser** — scans the device's `DCIM` folder and shows photos and videos
+  as a grid of thumbnails, loaded progressively in the background.
 - **EXIF metadata** — reads camera make/model, capture date and dimensions (taken from
   the JPEG frame, which can't be wrong), plus the full EXIF tag dump for each photo.
-- **Flexible organization** — choose how imported photos are organized:
+- **Flexible organization** — choose how imported files are organized:
   by year/month, year/month/day, or a single flat folder.
 - **Configurable file naming** — rename files based on capture date/time, with
   the option to keep the original filename as a suffix.
@@ -241,7 +244,7 @@ already been imported before, based on file content, not just the filename.
   next time you open the app.
 - **Copies by default, deletes only if you ask** — files are always copied
   from the camera. An explicit, always-off-by-default checkbox lets you also
-  delete already-imported photos from the camera afterward, for people who
+  delete already-imported files from the camera afterward, for people who
   want to clear the card as they go.
 - **Self-updating** — checks GitHub Releases on startup (can be turned off), shows a
   banner when a new version is out, and installs it with one click after verifying the
@@ -312,16 +315,16 @@ page. See [packaging/README.md](packaging/README.md) for how releases are built.
 The left panel walks through the import in three steps:
 
 1. **Camera** — plug the Charmera in. It's recognized and selected automatically, and its
-   photos appear as thumbnails. Click one to see its details, already read with the
-   repaired date and size.
+   photos and videos appear as thumbnails (videos show their duration). Click one to see
+   its details, already read with the repaired date and size.
 2. **Destination** — choose a folder, how to organize it and how to name the files. The
    *Example path* shows where a photo will end up. Every imported copy gets its metadata
    repaired; there's nothing to switch on.
-3. **After import** — optionally delete the photos from the camera once they're safely
+3. **After import** — optionally delete the files from the camera once they're safely
    copied.
 
-Then click **Import N photos**. Photos imported before (matched by content, not file
-name) are skipped and marked as duplicates. Language, update checks and *About* are
+Then click **Import N photos and M videos**. Files imported before (matched by content,
+not file name) are skipped and marked as duplicates. Language, update checks and *About* are
 under the ⚙ button.
 
 ## Platform support
@@ -345,8 +348,8 @@ layout on most Linux desktops.
   the note in that section).
 - A photo with no usable date at all (e.g. the camera's clock was never set) is named and
   organized by the file's modification date.
-- Automated tests cover the logic (path/naming rules, Charmera metadata repair and import,
-  update version and checksum handling), not the UI or device detection. Those are
+- Automated tests cover the logic (path/naming rules, the photo and video repairs and
+  their import, card detection, update version and checksum handling), not the UI. Those are
   still verified by hand.
 - Only English and Portuguese are translated so far — see `Localization/Translations.cs`
   to add another language (it's just a dictionary of strings per language code).

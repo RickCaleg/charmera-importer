@@ -90,7 +90,7 @@ internal static class Translations
 
         ["Settings_About"] = "Sobre o Charmera Importer",
         ["About_Title"] = "Sobre",
-        ["About_Tagline"] = "Importe as fotos da sua Kodak Charmera com a data certa, organizadas e sem duplicatas.",
+        ["About_Tagline"] = "Importe as fotos e os vídeos da sua Kodak Charmera com a data certa, organizados e sem duplicatas.",
         ["About_CharmeraTitle"] = "Feito exclusivamente para a Kodak Charmera",
         ["About_CharmeraBody"] = "O firmware da Charmera grava metadados defeituosos em todas as fotos. Ao importar, o app corrige cada cópia:",
         ["About_Fix1"] = "Data da foto num formato inválido, que outros apps não reconhecem",
@@ -127,6 +127,7 @@ internal static class Translations
         ["Detail_VideoNote"] = "A Charmera grava a data falsa 29/06/2010 dentro de todos os vídeos. O app usa a data real da gravação para nomear e organizar, e a corrige na cópia importada.",
         ["Card_Video"] = "VÍDEO",
         ["About_Fix5"] = "Vídeos com a data falsa 29/06/2010 gravada dentro do arquivo",
+        ["About_Feature7"] = "Importa também os vídeos, organizados pela data real da gravação",
     };
 
     private static readonly Dictionary<string, string> English = new()
@@ -212,7 +213,7 @@ internal static class Translations
 
         ["Settings_About"] = "About Charmera Importer",
         ["About_Title"] = "About",
-        ["About_Tagline"] = "Import photos from your Kodak Charmera with the right dates, neatly organized, and never twice.",
+        ["About_Tagline"] = "Import photos and videos from your Kodak Charmera with the right dates, neatly organized, and never twice.",
         ["About_CharmeraTitle"] = "Made exclusively for the Kodak Charmera",
         ["About_CharmeraBody"] = "The Charmera's firmware writes broken metadata into every photo. While importing, the app repairs each copy:",
         ["About_Fix1"] = "Capture date in an invalid format that other apps can't read",
@@ -249,6 +250,7 @@ internal static class Translations
         ["Detail_VideoNote"] = "The Charmera writes the fake date 2010-06-29 inside every video. The app uses the real recording date to name and file it, and fixes it in the imported copy.",
         ["Card_Video"] = "VIDEO",
         ["About_Fix5"] = "Videos with the fake date 2010-06-29 stored inside the file",
+        ["About_Feature7"] = "Imports videos too, filed by their real recording date",
     };
 
     public static IReadOnlyDictionary<string, string> Get(string languageCode) => languageCode switch

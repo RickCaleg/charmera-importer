@@ -21,9 +21,9 @@ namespace charmera_importer.Services;
 // How the new version gets installed depends on how this copy was installed:
 //   - Windows (Inno Setup install): run the new Setup.exe silently; it closes this app,
 //     upgrades in place (same AppId), and relaunches it.
-//   - Linux portable tarball in a user-writable folder: extract the new binary next to the
-//     running one and rename it over it (safe on Linux — the running process keeps its inode),
-//     then relaunch.
+//   - Linux portable tarball in a user-writable folder: stage the new binary next to the
+//     running one; once the app exits, a small shell helper renames it into place and
+//     relaunches it (see ReplaceLinuxExecutableAsync for why it can't happen in-process).
 //   - Linux .deb/.rpm (/opt, /usr), dev builds, other architectures: Manual — the package
 //     manager owns those files, so the user is sent to the release page instead.
 public sealed class GitHubUpdateService : IUpdateService
@@ -165,6 +165,11 @@ public sealed class GitHubUpdateService : IUpdateService
         });
     }
 
+    // The swap itself must happen after this process exits, not here: a single-file .NET app
+    // lazily loads framework assemblies out of its own bundle *by path*, so once a new binary
+    // sits at that path any later assembly load (even Process.Start's) reads the wrong file and
+    // crashes. So this only stages the new binary; a detached shell helper waits for this PID
+    // to exit, renames it into place, and relaunches it.
     [UnsupportedOSPlatform("windows")]
     private static async Task ReplaceLinuxExecutableAsync(string tarballPath, CancellationToken ct)
     {
@@ -172,8 +177,8 @@ public sealed class GitHubUpdateService : IUpdateService
             ?? throw new InvalidOperationException("Could not determine the running executable's path.");
         var installDirectory = Path.GetDirectoryName(executablePath)!;
 
-        // Staged inside the install directory so the final File.Move is a same-filesystem
-        // rename (atomic), never a cross-device copy that could leave a half-written binary.
+        // Staged inside the install directory so the final rename is same-filesystem (atomic),
+        // never a cross-device copy that could leave a half-written binary.
         var stagingDirectory = Path.Combine(installDirectory, $".charmera-importer-update-{Guid.NewGuid():N}");
         Directory.CreateDirectory(stagingDirectory);
         try
@@ -194,14 +199,27 @@ public sealed class GitHubUpdateService : IUpdateService
                 UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
                 | UnixFileMode.GroupRead | UnixFileMode.GroupExecute
                 | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
-            File.Move(newExecutable, executablePath, overwrite: true);
+
+            // $1 = our PID, $2 = staged binary, $3 = installed binary, $4 = staging dir. If the
+            // rename fails the old binary is still relaunched, so the user never ends up with
+            // no app at all.
+            var helper = new ProcessStartInfo("/bin/sh") { UseShellExecute = false };
+            helper.ArgumentList.Add("-c");
+            helper.ArgumentList.Add(
+                "while kill -0 \"$1\" 2>/dev/null; do sleep 0.2; done; " +
+                "mv -f \"$2\" \"$3\"; rm -rf \"$4\"; exec \"$3\"");
+            helper.ArgumentList.Add("charmera-importer-updater");
+            helper.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            helper.ArgumentList.Add(newExecutable);
+            helper.ArgumentList.Add(executablePath);
+            helper.ArgumentList.Add(stagingDirectory);
+            Process.Start(helper);
         }
-        finally
+        catch
         {
             Directory.Delete(stagingDirectory, recursive: true);
+            throw;
         }
-
-        Process.Start(new ProcessStartInfo(executablePath) { UseShellExecute = false });
     }
 
     private static bool CanSelfInstall()

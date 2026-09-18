@@ -9,6 +9,16 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-18
+
+### Fixed
+
+- Linux self-update crashed the running app right after swapping in the new binary: a
+  single-file .NET app keeps loading its own assemblies from the executable's path. The new
+  binary is now moved into place by a small helper after the app has exited, and the app
+  then relaunches normally. Updating *from* 0.2.0 on Linux may still show "Update failed".
+  The new version is already installed at that point, so just reopen the app.
+
 ## [0.2.0] - 2026-09-18
 
 First release with downloadable installers.

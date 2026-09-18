@@ -42,8 +42,10 @@ updating those constants too, or existing installs stop finding their updates.
 - **Windows**: runs the new setup with `/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS`.
   The installer's fixed `AppId` makes it upgrade the existing install in place, and its
   `[Run]` section relaunches the app after a silent install.
-- **Linux portable**: extracts the tarball next to the running binary and renames the new
-  binary over it, then relaunches.
+- **Linux portable**: extracts the tarball into a staging folder next to the running binary.
+  After the app exits, a detached `/bin/sh` helper renames the new binary into place and
+  relaunches it. The swap can't happen while the app runs: a single-file .NET app loads
+  assemblies from its own file *by path*, so replacing it mid-run crashes the old process.
 - **`.deb`/`.rpm`** (anything under `/opt` or `/usr`), dev builds, and non-x64 machines:
   the app only links to the release page. The package manager owns those files.
 

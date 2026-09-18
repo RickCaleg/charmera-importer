@@ -9,6 +9,8 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-18
+
 ### Added
 
 - **Video import.** The Charmera's AVI videos (Motion-JPEG + PCM) are now imported

@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\charmera-icon.ico</ApplicationIcon>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <Product>Charmera Importer</Product>
     <Authors>Richardson Calegari Saconi</Authors>
     <Description>USB photo importer for Kodak cameras, with EXIF-based organization and duplicate detection.</Description>

@@ -9,6 +9,15 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-18
+
+### Fixed
+
+- The app hung at startup, with no window, once a settings file existed, i.e. after
+  changing any preference. Loading settings blocked the UI thread while waiting on work
+  that needed that same thread. Affected installs can't self-update, so download 0.2.2
+  from the release page once.
+
 ## [0.2.1] - 2026-09-18
 
 ### Fixed

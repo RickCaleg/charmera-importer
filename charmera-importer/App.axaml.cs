@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -37,8 +38,10 @@ public partial class App : Application
             var settingsService = new JsonAppSettingsService(settingsFilePath);
 
             // A tiny local read, done synchronously here so the very first frame already
-            // renders with the saved language and preferences already applied.
-            var initialSettings = settingsService.LoadAsync().GetAwaiter().GetResult();
+            // renders with the saved language and preferences already applied. It runs on the
+            // thread pool: blocking the UI thread on LoadAsync directly deadlocks as soon as a
+            // settings file exists, because its awaits try to resume on this same UI thread.
+            var initialSettings = Task.Run(() => settingsService.LoadAsync()).GetAwaiter().GetResult();
             var initialLanguage = initialSettings.LanguageCode is not null
                 ? LanguageOption.FromCode(initialSettings.LanguageCode)
                 : LanguageOption.DetectSystem();

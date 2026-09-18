@@ -9,6 +9,13 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Added
+
+- **Arch Linux install script** (`packaging/arch/install.sh`): a one-liner that builds a
+  pacman package (`charmera-importer-bin`) from the latest release, verifies it against the
+  release's `SHA256SUMS`, and installs it. Run it again to update; `--uninstall` removes it.
+  A `PKGBUILD` is included for building by hand.
+
 ## [0.5.0] - 2026-09-18
 
 ### Added

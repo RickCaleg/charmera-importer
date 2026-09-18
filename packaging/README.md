@@ -33,6 +33,13 @@ publishes one GitHub Release with:
 | `charmera-importer-<v>-win-x64-setup.exe` | [Inno Setup 6](https://jrsoftware.org/isinfo.php) ([`windows/charmera-importer.iss`](windows/charmera-importer.iss)) | Per-user install, no admin; self-updates |
 | `SHA256SUMS` | `sha256sum` | **Required** — the updater refuses anything not listed here |
 
+Arch Linux is served by [`arch/install.sh`](arch/install.sh) rather than a release asset:
+- It reads the latest tag from the GitHub API and the tarball's checksum from `SHA256SUMS`.
+- It fills both into [`arch/PKGBUILD`](arch/PKGBUILD) and runs `makepkg`.
+- So new releases need no Arch-specific step. The `pkgver`/`sha256sums` committed in the
+  PKGBUILD only matter when building it by hand. Bump them in the release PR if you want
+  them current.
+
 All binaries are self-contained single files (they bundle the .NET runtime), so users
 don't need .NET installed.
 
@@ -51,8 +58,8 @@ updating those constants too, or existing installs stop finding their updates.
   After the app exits, a detached `/bin/sh` helper renames the new binary into place and
   relaunches it. The swap can't happen while the app runs: a single-file .NET app loads
   assemblies from its own file *by path*, so replacing it mid-run crashes the old process.
-- **`.deb`/`.rpm`** (anything under `/opt` or `/usr`), dev builds, and non-x64 machines:
-  the app only links to the release page. The package manager owns those files.
+- **`.deb`/`.rpm`/Arch package** (anything under `/opt` or `/usr`), dev builds, and non-x64
+  machines: the app only links to the release page. The package manager owns those files.
 
 Only full releases count — drafts and pre-releases are ignored by `releases/latest`.
 

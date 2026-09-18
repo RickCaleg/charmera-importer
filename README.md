@@ -265,6 +265,7 @@ All builds are self-contained — no .NET installation needed.
 | Linux (x64), any distro | `charmera-importer-<version>-linux-x64.tar.gz` | Automatic, from inside the app |
 | Debian / Ubuntu | `charmera-importer_<version>_amd64.deb` | Download the new `.deb` (the app tells you when) |
 | Fedora / openSUSE | `charmera-importer-<version>-1.x86_64.rpm` | Download the new `.rpm` (the app tells you when) |
+| Arch Linux (and derivatives) | one-line install script (below) | Run the script again (the app tells you when) |
 
 **Windows:** run the setup. It installs for your user only, so no administrator prompt.
 Windows SmartScreen may warn that the publisher is unknown, because the installer isn't
@@ -280,6 +281,26 @@ work. The tarball also contains a `.desktop` file and icon if you want a menu en
 sudo apt install ./charmera-importer_<version>_amd64.deb     # Debian/Ubuntu
 sudo dnf install ./charmera-importer-<version>-1.x86_64.rpm  # Fedora
 ```
+
+**Arch Linux (and derivatives: EndeavourOS, Manjaro, Omarchy…):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RickCaleg/charmera-importer/main/packaging/arch/install.sh | bash
+```
+
+The script:
+- builds a proper pacman package, `charmera-importer-bin`, from the official release,
+  after checking its checksum against the release's `SHA256SUMS`;
+- installs it with `pacman`, so the app shows up in your menu and uninstalls cleanly. It
+  asks for your sudo password only for this step.
+
+To manage it later:
+- **Update:** run the script again.
+- **Install a specific version:** `… | bash -s -- --version 0.5.0`.
+- **Uninstall:** `… | bash -s -- --uninstall`. Your settings and imported files are kept.
+
+Prefer to read it first? [Download `install.sh`](packaging/arch/install.sh), or build the
+[`PKGBUILD`](packaging/arch/PKGBUILD) yourself with `makepkg -si`.
 
 You can verify any download against `SHA256SUMS` from the same release
 (`sha256sum -c SHA256SUMS --ignore-missing`).

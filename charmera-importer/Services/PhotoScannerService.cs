@@ -23,9 +23,13 @@ public sealed class PhotoScannerService : IPhotoScannerService
             {
                 ct.ThrowIfCancellationRequested();
 
-                // Charmera photos only (JPEGs carrying its encoder signature): anything else on
-                // the card, e.g. files copied onto it from elsewhere, isn't ours to import.
-                if (!CharmeraExif.IsJpegName(filePath) || !CharmeraExif.IsCharmeraFile(filePath))
+                // Charmera photos (JPEGs carrying its encoder signature) and videos (AVI): anything
+                // else on the card, e.g. files copied onto it from elsewhere, isn't ours to import.
+                var isVideo = CharmeraAvi.IsAviName(filePath);
+                var isCharmeraMedia = isVideo
+                    ? CharmeraAvi.IsAviFile(filePath)
+                    : CharmeraExif.IsJpegName(filePath) && CharmeraExif.IsCharmeraFile(filePath);
+                if (!isCharmeraMedia)
                 {
                     continue;
                 }
@@ -46,6 +50,7 @@ public sealed class PhotoScannerService : IPhotoScannerService
                     FileName = info.Name,
                     FileSizeBytes = info.Length,
                     FileSystemDateModified = info.LastWriteTime,
+                    IsVideo = isVideo,
                 });
             }
 

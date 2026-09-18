@@ -18,11 +18,11 @@ vendor: "Richardson Calegari Saconi"
 homepage: "https://github.com/RickCaleg/charmera-importer"
 license: MIT
 description: |
-  Photo importer for the Kodak Charmera keychain camera.
-  Recognizes the camera when plugged in, repairs the broken EXIF metadata
-  its firmware writes (invalid date format, wrong image size, corrupt
-  MakerNote, chip name as camera), organizes photos by capture date, and
-  skips duplicates by content (SHA-256). Self-contained build: bundles its
+  Photo and video importer for the Kodak Charmera keychain camera.
+  Recognizes the camera when plugged in, repairs the broken metadata its
+  firmware writes (invalid photo date format, wrong image size, corrupt
+  MakerNote, chip name as camera, fake 2010 date in every video),
+  organizes files by capture date, and skips duplicates by content (SHA-256). Self-contained build: bundles its
   own .NET runtime, no external dependencies beyond a standard Linux desktop.
 
 contents:

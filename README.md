@@ -1,8 +1,8 @@
 # Charmera Importer
 
-A desktop app for importing photos from the **Kodak Charmera** keychain camera. It
-**repairs the broken metadata the camera writes into every photo**, organizes the
-photos by the date they were taken, and never imports the same photo twice.
+A desktop app for importing photos and videos from the **Kodak Charmera** keychain camera.
+It **repairs the broken metadata the camera writes into every file**, organizes everything
+by the date it was taken, and never imports the same file twice.
 
 [![CI](https://github.com/RickCaleg/charmera-importer/actions/workflows/ci.yml/badge.svg)](https://github.com/RickCaleg/charmera-importer/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/RickCaleg/charmera-importer)](https://github.com/RickCaleg/charmera-importer/releases/latest)
@@ -72,6 +72,21 @@ same EXIF structure: a little-endian TIFF block, 784 bytes.
   35 mm-equivalent focal length, f/2.4. The real focal length isn't published, so it isn't
   invented.
 
+**5. Every video claims to be from 29 June 2010.**
+- **What the camera writes:** videos are AVI files (Motion-JPEG video + PCM audio), and
+  every one has the same hard-coded recording date, `2010-06-29`.
+- **Effect:** apps that read the recording date (ffprobe/ffmpeg report it as
+  `creation_time`) sort every Charmera video into 2010.
+- **Where the real date is:** the camera writes the correct time as the file's timestamp on
+  the memory card.
+- **Fix:** the importer uses that timestamp to name and file the video. In the copy, it
+  rewrites the standard AVI date fields (`IDIT` in the header, `ICRD` in the INFO list) that
+  hold the fake date. The rewrite happens in place, in the same text format and byte length,
+  so nothing else in the file moves. Only about 19 bytes of the copy change, and the video
+  and audio data are untouched.
+- **Scope:** a field is only rewritten when it holds exactly the known fake date. Anything
+  else is left as it is.
+
 ### How the repair is done
 
 The importer never edits the broken block in place, because its offsets can't be trusted.
@@ -108,6 +123,33 @@ Duplicate detection keeps working across repairs:
 - **Photos already in the destination:** compared against the *repaired* output, so a lost
   history doesn't produce `_1` copies.
 
+### How videos are handled
+
+- **Read without a decoder.** Only the AVI headers are read, with seeks, never the whole
+  file. They give the size, duration, frame rate, codec, audio format and the date fields.
+- **Thumbnail from the first frame.** Motion-JPEG stores each frame as a complete JPEG, so
+  the first frame is shown directly, with no video decoder needed.
+- **Written safely.** Each video is copied to a temporary file next to its destination and
+  repaired there. It's then hashed, to recognize an identical video already at the
+  destination, and renamed into place. The camera's file is never modified.
+- **No MP4 conversion.** The AVI stays exactly as recorded, apart from the date. Motion-JPEG
+  is large (about 2 MB per second), but converting would mean re-encoding (quality loss)
+  and bundling ffmpeg. If you want smaller files, convert the imported copies yourself, e.g.
+  `ffmpeg -i PICT0001.AVI -c:v libx264 -crf 20 -c:a aac PICT0001.mp4`.
+  ffmpeg keeps the corrected recording date.
+
+> **Not yet verified on an original Charmera video.** No unedited Charmera AVI was
+> available while this was built. The fix targets the standard fields where ffprobe
+> reports `creation_time`, which is how the fake date was documented. It was tested on real
+> Motion-JPEG AVIs carrying the fake date in those fields:
+> - ffprobe shows the real date after import;
+> - every video frame and the audio are bit-identical;
+> - the source files are unchanged.
+>
+> If the camera stores the date somewhere else, the video is still copied unchanged and
+> named and filed by the correct date. An original `.avi` shared in an
+> [issue](https://github.com/RickCaleg/charmera-importer/issues) would settle it.
+
 ### Why Charmera-only
 
 Repairs like "the date is in the colons-everywhere form" or "Generalplus CBB3 means Kodak
@@ -118,8 +160,8 @@ cameras' files would risk corrupting good metadata. So the app only works with t
   `SPIDCIM` folder the camera creates next to `DCIM`, or by the Generalplus `GPEncoder`
   signature in its photos. It's judged by content, never by the volume name, so a renamed
   card still works, and other cameras and USB drives don't show up.
-- **Photos:** only JPEGs carrying that signature are imported. Anything else on the card,
-  e.g. files copied onto it from elsewhere, is left alone.
+- **Files:** only JPEGs carrying that signature, and AVI videos, are imported. Anything
+  else on the card, e.g. files copied onto it from elsewhere, is left alone.
 
 ### Verification
 
@@ -181,13 +223,16 @@ already been imported before, based on file content, not just the filename.
 ## Features
 
 - **Kodak Charmera metadata repair** — see [above](#why-this-app-exists-the-charmeras-broken-metadata).
+- **Videos too** — the Charmera's AVI videos are imported alongside photos, filed by their
+  real recording date (the fake 2010 date is corrected), with thumbnails and duration. See
+  [How videos are handled](#how-videos-are-handled).
 - **Charmera detection** — recognizes the camera as soon as it's plugged in (Linux and
   Windows), by content rather than by name, and selects it automatically.
-- **Thumbnail browser** — scans the device's `DCIM` folder and shows photos as
-  a grid of thumbnails, loaded progressively in the background.
+- **Thumbnail browser** — scans the device's `DCIM` folder and shows photos and videos
+  as a grid of thumbnails, loaded progressively in the background.
 - **EXIF metadata** — reads camera make/model, capture date and dimensions (taken from
   the JPEG frame, which can't be wrong), plus the full EXIF tag dump for each photo.
-- **Flexible organization** — choose how imported photos are organized:
+- **Flexible organization** — choose how imported files are organized:
   by year/month, year/month/day, or a single flat folder.
 - **Configurable file naming** — rename files based on capture date/time, with
   the option to keep the original filename as a suffix.
@@ -199,7 +244,7 @@ already been imported before, based on file content, not just the filename.
   next time you open the app.
 - **Copies by default, deletes only if you ask** — files are always copied
   from the camera. An explicit, always-off-by-default checkbox lets you also
-  delete already-imported photos from the camera afterward, for people who
+  delete already-imported files from the camera afterward, for people who
   want to clear the card as they go.
 - **Self-updating** — checks GitHub Releases on startup (can be turned off), shows a
   banner when a new version is out, and installs it with one click after verifying the
@@ -270,16 +315,16 @@ page. See [packaging/README.md](packaging/README.md) for how releases are built.
 The left panel walks through the import in three steps:
 
 1. **Camera** — plug the Charmera in. It's recognized and selected automatically, and its
-   photos appear as thumbnails. Click one to see its details, already read with the
-   repaired date and size.
+   photos and videos appear as thumbnails (videos show their duration). Click one to see
+   its details, already read with the repaired date and size.
 2. **Destination** — choose a folder, how to organize it and how to name the files. The
    *Example path* shows where a photo will end up. Every imported copy gets its metadata
    repaired; there's nothing to switch on.
-3. **After import** — optionally delete the photos from the camera once they're safely
+3. **After import** — optionally delete the files from the camera once they're safely
    copied.
 
-Then click **Import N photos**. Photos imported before (matched by content, not file
-name) are skipped and marked as duplicates. Language, update checks and *About* are
+Then click **Import N photos and M videos**. Files imported before (matched by content,
+not file name) are skipped and marked as duplicates. Language, update checks and *About* are
 under the ⚙ button.
 
 ## Platform support
@@ -297,12 +342,14 @@ layout on most Linux desktops.
 
 - Only the Kodak Charmera is supported, on purpose (see
   [Why Charmera-only](#why-charmera-only)).
-- Charmera **videos** (`.avi`) aren't imported yet. The camera also stamps them with a
-  wrong, hard-coded date (2010-06-29).
+- Videos are imported as AVI (Motion-JPEG), not converted to MP4. See
+  [How videos are handled](#how-videos-are-handled).
+- The video date repair hasn't been checked against an original Charmera video yet (see
+  the note in that section).
 - A photo with no usable date at all (e.g. the camera's clock was never set) is named and
   organized by the file's modification date.
-- Automated tests cover the logic (path/naming rules, Charmera metadata repair and import,
-  update version and checksum handling), not the UI or device detection. Those are
+- Automated tests cover the logic (path/naming rules, the photo and video repairs and
+  their import, card detection, update version and checksum handling), not the UI. Those are
   still verified by hand.
 - Only English and Portuguese are translated so far — see `Localization/Translations.cs`
   to add another language (it's just a dictionary of strings per language code).

@@ -45,6 +45,16 @@ public partial class PhotoItemViewModel : ViewModelBase
     public bool HasDimensions => Width.HasValue && Height.HasValue;
     public bool HasAnyBasicExifInfo => HasCameraMake || HasCameraModel || HasDateTaken || HasDimensions;
     public bool IsCharmera => Candidate.Exif?.IsCharmera == true;
+    public bool IsVideo => Candidate.IsVideo;
+    public bool IsPhoto => !Candidate.IsVideo;
+    public bool HasDuration => Candidate.Exif?.Duration is not null;
+    // Rounded, not truncated: frame timing makes a 2 s clip 1.99998 s long.
+    public string DurationDisplay => Candidate.Exif?.Duration is { } exact
+        && TimeSpan.FromSeconds(Math.Round(exact.TotalSeconds)) is var d
+        ? d.ToString(d.TotalHours >= 1 ? @"h\:mm\:ss" : @"m\:ss", System.Globalization.CultureInfo.InvariantCulture)
+        : string.Empty;
+    public string VideoBadge => HasDuration ? $"{LocalizedStrings.Instance.CardVideo} · {DurationDisplay}" : LocalizedStrings.Instance.CardVideo;
+    public string DetailTitle => IsVideo ? LocalizedStrings.Instance.DetailVideoTitle : LocalizedStrings.Instance.DetailTitle;
 
     public PhotoItemViewModel(PhotoImportCandidate candidate)
     {
@@ -70,6 +80,9 @@ public partial class PhotoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasDimensions));
         OnPropertyChanged(nameof(HasAnyBasicExifInfo));
         OnPropertyChanged(nameof(IsCharmera));
+        OnPropertyChanged(nameof(HasDuration));
+        OnPropertyChanged(nameof(DurationDisplay));
+        OnPropertyChanged(nameof(VideoBadge));
     }
 
     public void ApplyThumbnail(Bitmap? thumbnail)
@@ -92,5 +105,7 @@ public partial class PhotoItemViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(StatusLabel));
         OnPropertyChanged(nameof(DateTakenDisplay));
+        OnPropertyChanged(nameof(VideoBadge));
+        OnPropertyChanged(nameof(DetailTitle));
     }
 }

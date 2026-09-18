@@ -15,13 +15,20 @@ public sealed class ThumbnailService : IThumbnailService
 
             try
             {
+                // Charmera videos are Motion-JPEG: their first frame is a JPEG to show as-is.
+                if (CharmeraAvi.IsAviName(filePath))
+                {
+                    var frame = CharmeraAvi.ReadFirstFrame(filePath, CharmeraAvi.Read(filePath));
+                    return frame is null ? null : Bitmap.DecodeToWidth(new MemoryStream(frame), maxWidth);
+                }
+
                 using var stream = File.OpenRead(filePath);
                 return Bitmap.DecodeToWidth(stream, maxWidth);
             }
             catch
             {
-                // Unsupported format for decoding (e.g. RAW: .cr2/.nef/.arw/.dng) or corrupt file —
-                // the UI falls back to a placeholder; EXIF reading is unaffected since it's independent.
+                // Corrupt file or undecodable frame: the UI falls back to a placeholder; metadata
+                // reading is independent.
                 return null;
             }
         }, ct);

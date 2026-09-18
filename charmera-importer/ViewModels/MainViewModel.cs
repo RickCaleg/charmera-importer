@@ -142,7 +142,10 @@ public partial class MainViewModel : ViewModelBase
     public bool ShowScanningState => HasDevice && IsScanning && Photos.Count == 0;
     public bool ShowNoPhotosState => HasDevice && !IsScanning && Photos.Count == 0;
 
-    public string PhotosCountLabel => LocalizedStrings.Instance.PhotosCount(Photos.Count);
+    private int VideoCount => Photos.Count(p => p.Candidate.IsVideo);
+    private int PhotoOnlyCount => Photos.Count - VideoCount;
+
+    public string PhotosCountLabel => LocalizedStrings.Instance.MediaSummary(PhotoOnlyCount, VideoCount);
     public string DestinationRootPathDisplay => DestinationRootPath ?? LocalizedStrings.Instance.NoDestinationSelected;
 
     public string DestinationFolderName => string.IsNullOrWhiteSpace(DestinationRootPath)
@@ -153,7 +156,7 @@ public partial class MainViewModel : ViewModelBase
 
     public string SourceSummary => !HasDevice ? LocalizedStrings.Instance.SourceNoDevice
         : IsScanning && Photos.Count == 0 ? LocalizedStrings.Instance.ScanningStatus
-        : LocalizedStrings.Instance.PhotosFound(Photos.Count);
+        : LocalizedStrings.Instance.MediaSummary(PhotoOnlyCount, VideoCount);
 
     public string DestinationPreview
     {
@@ -169,7 +172,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public string ImportButtonLabel => LocalizedStrings.Instance.ImportButton(Photos.Count);
+    public string ImportButtonLabel => LocalizedStrings.Instance.ImportButton(PhotoOnlyCount, VideoCount);
 
     // Explains a disabled Import button instead of leaving the user guessing.
     public string? ImportHint => IsImporting ? null

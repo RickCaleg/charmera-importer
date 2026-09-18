@@ -9,6 +9,18 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Added
+
+- **Video import.** The Charmera's AVI videos (Motion-JPEG + PCM) are now imported
+  alongside photos, with the same organization, naming, duplicate detection and optional
+  deletion from the camera.
+  - **Date:** videos are named and filed by their real recording time, from the file's
+    timestamp on the card. The camera's fake date (2010-06-29) is rewritten in place in the
+    copy's `IDIT`/`ICRD` fields, same length, with video and audio untouched.
+  - **Thumbnails** come from the first Motion-JPEG frame, with no video decoder needed.
+  - **Details** show the duration, and the photo count and Import button say
+    "N photos and M videos".
+
 ## [0.4.0] - 2026-09-18
 
 ### Added

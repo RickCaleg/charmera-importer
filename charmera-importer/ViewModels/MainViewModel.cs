@@ -102,6 +102,14 @@ public partial class MainViewModel : ViewModelBase
     public partial bool CheckForUpdatesAutomatically { get; set; } = true;
 
     [ObservableProperty]
+    public partial bool RepairCharmeraMetadata { get; set; } = true;
+
+    // True once any scanned photo turns out to come from a Kodak Charmera (EXIF is read in the
+    // background, so this flips on as results arrive).
+    [ObservableProperty]
+    public partial bool IsCharmeraDetected { get; set; }
+
+    [ObservableProperty]
     public partial UpdateInfo? AvailableUpdate { get; set; }
 
     [ObservableProperty]
@@ -128,6 +136,7 @@ public partial class MainViewModel : ViewModelBase
         ? LocalizedStrings.Instance.UpdateDownloadButton
         : LocalizedStrings.Instance.UpdateInstallButton;
     public string CurrentVersionLabel => LocalizedStrings.Instance.VersionLabel(updateService.CurrentVersion.ToString(3));
+    public string VersionOnlyLabel => LocalizedStrings.Instance.VersionOnly(updateService.CurrentVersion.ToString(3));
 
     public bool HasDevice => SelectedDevice is not null;
     public bool HasDestination => !string.IsNullOrWhiteSpace(DestinationRootPath);
@@ -214,6 +223,7 @@ public partial class MainViewModel : ViewModelBase
         DestinationRootPath = initialSettings.DestinationRootPath;
         AppendOriginalFileName = initialSettings.AppendOriginalFileName;
         CheckForUpdatesAutomatically = initialSettings.CheckForUpdates;
+        RepairCharmeraMetadata = initialSettings.RepairCharmeraMetadata;
         suppressSettingsPersistence = false;
 
         LocalizedStrings.Instance.PropertyChanged += OnLocalizationChanged;
@@ -270,6 +280,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(UpdateBannerText));
         OnPropertyChanged(nameof(UpdateActionLabel));
         OnPropertyChanged(nameof(CurrentVersionLabel));
+        OnPropertyChanged(nameof(VersionOnlyLabel));
         foreach (var photo in Photos)
         {
             photo.RefreshLocalizedText();
@@ -289,7 +300,8 @@ public partial class MainViewModel : ViewModelBase
             SelectedOrganizationOption.Value,
             SelectedNamingPreset.Value,
             AppendOriginalFileName,
-            CheckForUpdatesAutomatically);
+            CheckForUpdatesAutomatically,
+            RepairCharmeraMetadata);
 
         _ = settingsService.SaveAsync(settings);
     }
@@ -319,6 +331,8 @@ public partial class MainViewModel : ViewModelBase
     }
 
     partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => PersistSettings();
+
+    partial void OnRepairCharmeraMetadataChanged(bool value) => PersistSettings();
 
     partial void OnAvailableUpdateChanged(UpdateInfo? value)
     {
@@ -524,6 +538,7 @@ public partial class MainViewModel : ViewModelBase
         scanCts?.Cancel();
         Photos.Clear();
         SelectedPhoto = null;
+        IsCharmeraDetected = false;
 
         if (SelectedDevice is null)
         {
@@ -578,6 +593,10 @@ public partial class MainViewModel : ViewModelBase
                 {
                     item.ApplyThumbnail(thumbnail);
                     item.ApplyExif(exif);
+                    if (exif?.IsCharmera == true)
+                    {
+                        IsCharmeraDetected = true;
+                    }
                 });
             }
             catch (OperationCanceledException)
@@ -600,6 +619,7 @@ public partial class MainViewModel : ViewModelBase
         NamingPreset = SelectedNamingPreset.Value,
         AppendOriginalFileName = AppendOriginalFileName,
         DeleteSourceAfterImport = DeleteSourceAfterImport,
+        RepairCharmeraMetadata = RepairCharmeraMetadata,
     };
 
     [RelayCommand]

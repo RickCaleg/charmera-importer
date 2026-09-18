@@ -7,4 +7,5 @@ public sealed class ImportSettings
     public FileNamingPreset NamingPreset { get; init; } = FileNamingPreset.CompactDateTime;
     public bool AppendOriginalFileName { get; init; } = true;
     public bool DeleteSourceAfterImport { get; init; }
+    public bool RepairCharmeraMetadata { get; init; } = true;
 }

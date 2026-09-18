@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,10 @@ public sealed class ExifService : IExifService
         {
             ct.ThrowIfCancellationRequested();
 
+            // Charmera files get our own tolerant reading: their EXIF is structurally broken, so
+            // generic readers miss the date and report the wrong dimensions (see CharmeraExif).
+            var charmera = CharmeraExif.IsCharmeraFile(filePath) ? TryReadCharmera(filePath) : null;
+
             IReadOnlyList<MetadataExtractor.Directory> directories;
             try
             {
@@ -27,7 +32,11 @@ public sealed class ExifService : IExifService
             {
                 // Not every file yields readable metadata (unsupported format, corrupt file, etc.) —
                 // treat this as "no EXIF available" rather than failing the whole scan.
-                return null;
+                directories = [];
+                if (charmera is null)
+                {
+                    return null;
+                }
             }
 
             var ifd0 = directories.OfType<ExifIfd0Directory>().FirstOrDefault();
@@ -37,29 +46,28 @@ public sealed class ExifService : IExifService
             string? cameraMake = ifd0?.GetString(ExifDirectoryBase.TagMake)?.Trim();
             string? cameraModel = ifd0?.GetString(ExifDirectoryBase.TagModel)?.Trim();
 
-            DateTime? dateTaken = null;
-            if (subIfd is not null && subIfd.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out var originalDate))
-            {
-                dateTaken = originalDate;
-            }
-            else if (subIfd is not null && subIfd.TryGetDateTime(ExifDirectoryBase.TagDateTimeDigitized, out var digitizedDate))
-            {
-                dateTaken = digitizedDate;
-            }
-            else if (ifd0 is not null && ifd0.TryGetDateTime(ExifDirectoryBase.TagDateTime, out var modifiedDate))
-            {
-                dateTaken = modifiedDate;
-            }
+            var dateTaken = TryGetDate(subIfd, ExifDirectoryBase.TagDateTimeOriginal)
+                ?? TryGetDate(subIfd, ExifDirectoryBase.TagDateTimeDigitized)
+                ?? TryGetDate(ifd0, ExifDirectoryBase.TagDateTime);
 
-            // Cameras that don't write full EXIF (e.g. this Kodak) still have baseline JPEG SOF
-            // dimensions, so fall back to those rather than leaving Width/Height empty.
+            // The JPEG frame header is the ground truth for pixel size; EXIF dimension tags can
+            // be wrong (the Charmera claims 640x480 for 1440x1080 images), so they're a fallback.
             var jpeg = directories.OfType<JpegDirectory>().FirstOrDefault();
-            int? width = TryGetInt(subIfd, ExifDirectoryBase.TagExifImageWidth)
-                ?? TryGetInt(ifd0, ExifDirectoryBase.TagImageWidth)
-                ?? TryGetInt(jpeg, JpegDirectory.TagImageWidth);
-            int? height = TryGetInt(subIfd, ExifDirectoryBase.TagExifImageHeight)
-                ?? TryGetInt(ifd0, ExifDirectoryBase.TagImageHeight)
-                ?? TryGetInt(jpeg, JpegDirectory.TagImageHeight);
+            int? width = TryGetInt(jpeg, JpegDirectory.TagImageWidth)
+                ?? TryGetInt(subIfd, ExifDirectoryBase.TagExifImageWidth)
+                ?? TryGetInt(ifd0, ExifDirectoryBase.TagImageWidth);
+            int? height = TryGetInt(jpeg, JpegDirectory.TagImageHeight)
+                ?? TryGetInt(subIfd, ExifDirectoryBase.TagExifImageHeight)
+                ?? TryGetInt(ifd0, ExifDirectoryBase.TagImageHeight);
+
+            if (charmera is not null)
+            {
+                cameraMake = charmera.Make ?? CharmeraExif.DefaultMake;
+                cameraModel = charmera.Model ?? CharmeraExif.DefaultModel;
+                dateTaken = charmera.DateTaken ?? dateTaken;
+                width = charmera.Width > 0 ? charmera.Width : width;
+                height = charmera.Height > 0 ? charmera.Height : height;
+            }
 
             string? orientation = ifd0 is not null && ifd0.ContainsTag(ExifDirectoryBase.TagOrientation)
                 ? ifd0.GetDescription(ExifDirectoryBase.TagOrientation)
@@ -98,8 +106,38 @@ public sealed class ExifService : IExifService
                 fNumber,
                 isoSpeed,
                 gpsLatLong,
-                allTags);
+                allTags,
+                charmera is not null);
         }, ct);
+    }
+
+    private static CharmeraExifInfo? TryReadCharmera(string filePath)
+    {
+        try
+        {
+            return CharmeraExif.Read(File.ReadAllBytes(filePath));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // Standard EXIF dates first; then the raw string, which also covers the Charmera's
+    // "YYYY:MM:DD:HH:MM:SS" form that MetadataExtractor can't parse.
+    private static DateTime? TryGetDate(MetadataExtractor.Directory? directory, int tagType)
+    {
+        if (directory is null || !directory.ContainsTag(tagType))
+        {
+            return null;
+        }
+
+        if (directory.TryGetDateTime(tagType, out var date))
+        {
+            return date;
+        }
+
+        return CharmeraExif.ParseExifDate(directory.GetString(tagType));
     }
 
     private static int? TryGetInt(MetadataExtractor.Directory? directory, int tagType)

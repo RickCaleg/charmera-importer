@@ -10,4 +10,5 @@ public sealed record AppSettings(
     FolderOrganizationScheme? OrganizationScheme,
     FileNamingPreset? NamingPreset,
     bool AppendOriginalFileName = true,
-    bool CheckForUpdates = true);
+    bool CheckForUpdates = true,
+    bool RepairCharmeraMetadata = true);

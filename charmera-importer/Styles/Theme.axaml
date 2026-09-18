@@ -236,6 +236,15 @@
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
+  <!-- "Kodak Charmera" call-outs: warm Kodak-yellow tint -->
+  <Style Selector="Border.charmeraBadge">
+    <Setter Property="Background" Value="#FFF4D6" />
+    <Setter Property="BorderBrush" Value="#F5D98B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
   <!-- Settings popover -->
   <Style Selector="FlyoutPresenter.settings">
     <Setter Property="Background" Value="White" />

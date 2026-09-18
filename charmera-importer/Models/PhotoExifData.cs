@@ -15,4 +15,7 @@ public sealed record PhotoExifData(
     double? FNumber,
     int? IsoSpeed,
     string? GpsLatLong,
-    IReadOnlyDictionary<string, string> AllTags);
+    IReadOnlyDictionary<string, string> AllTags,
+    // Taken by a Kodak Charmera (detected by its encoder signature): the values above come
+    // from the repaired reading, and the import rewrites the file's broken EXIF.
+    bool IsCharmera = false);

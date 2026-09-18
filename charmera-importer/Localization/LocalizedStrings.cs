@@ -22,8 +22,12 @@ public sealed class LocalizedStrings : ObservableObject
     public void Apply(string languageCode)
     {
         map = Translations.Get(languageCode);
+        Culture = System.Globalization.CultureInfo.GetCultureInfo(languageCode == "pt" ? "pt-BR" : "en-US");
         OnPropertyChanged(string.Empty);
     }
+
+    // Culture for dates/numbers shown in the UI, following the chosen language.
+    public System.Globalization.CultureInfo Culture { get; private set; } = System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
     private string Get(string key) => map.TryGetValue(key, out var value) ? value : key;
 
@@ -51,7 +55,6 @@ public sealed class LocalizedStrings : ObservableObject
 
     public string OrgYearMonth => Get("Org_YearMonth");
     public string OrgYearMonthDay => Get("Org_YearMonthDay");
-    public string OrgByCameraModel => Get("Org_ByCameraModel");
     public string OrgFlat => Get("Org_Flat");
 
     public string ScanningStatus => Get("Status_Scanning");
@@ -60,6 +63,34 @@ public sealed class LocalizedStrings : ObservableObject
     public string AlreadyImportedMessage => Get("Import_AlreadyImported");
     public string AlreadyAtDestinationMessage => Get("Import_AlreadyAtDestination");
     public string ImportedMessage => Get("Import_Success");
+    public string ImportedRepairedMessage => Get("Import_SuccessRepaired");
+    public string AppSubtitle => Get("App_Subtitle");
+    public string DetailCharmeraNote => Get("Detail_CharmeraNote");
+    public string SettingsAbout => Get("Settings_About");
+    public string AboutTitle => Get("About_Title");
+    public string AboutTagline => Get("About_Tagline");
+    public string AboutCharmeraTitle => Get("About_CharmeraTitle");
+    public string AboutCharmeraBody => Get("About_CharmeraBody");
+    public string AboutFix1 => Get("About_Fix1");
+    public string AboutFix2 => Get("About_Fix2");
+    public string AboutFix3 => Get("About_Fix3");
+    public string AboutFix4 => Get("About_Fix4");
+    public string AboutCharmeraFootnote => Get("About_CharmeraFootnote");
+    public string AboutFeaturesTitle => Get("About_FeaturesTitle");
+    public string AboutFeature1 => Get("About_Feature1");
+    public string AboutFeature2 => Get("About_Feature2");
+    public string AboutFeature3 => Get("About_Feature3");
+    public string AboutFeature4 => Get("About_Feature4");
+    public string AboutFeature5 => Get("About_Feature5");
+    public string AboutFeature6 => Get("About_Feature6");
+    public string AboutPrivacyTitle => Get("About_PrivacyTitle");
+    public string AboutPrivacyBody => Get("About_PrivacyBody");
+    public string AboutLinkSource => Get("About_LinkSource");
+    public string AboutLinkIssue => Get("About_LinkIssue");
+    public string AboutLinkLicense => Get("About_LinkLicense");
+    public string AboutLinkNotices => Get("About_LinkNotices");
+    public string AboutCredits => Get("About_Credits");
+    public string AboutClose => Get("About_Close");
 
     public string FolderPickerTitle => Get("FolderPicker_Title");
 
@@ -109,13 +140,13 @@ public sealed class LocalizedStrings : ObservableObject
         1 => Get("Import_ButtonOne"),
         _ => string.Format(Get("Import_ButtonFormat"), count),
     };
+    public string VersionOnly(string version) => string.Format(Get("About_VersionFormat"), version);
     public string VersionLabel(string version) => string.Format(Get("Update_VersionFormat"), version);
 
     public string OrganizationDisplayName(FolderOrganizationScheme scheme) => scheme switch
     {
         FolderOrganizationScheme.YearMonth => OrgYearMonth,
         FolderOrganizationScheme.YearMonthDay => OrgYearMonthDay,
-        FolderOrganizationScheme.ByCameraModel => OrgByCameraModel,
         _ => OrgFlat,
     };
 

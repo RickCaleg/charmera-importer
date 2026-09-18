@@ -27,6 +27,9 @@ public partial class PhotoItemViewModel : ViewModelBase
     public string? CameraMake => Candidate.Exif?.CameraMake;
     public string? CameraModel => Candidate.Exif?.CameraModel;
     public DateTime? DateTaken => Candidate.Exif?.DateTaken;
+
+    // Formatted for the app's language, not the OS locale (they can differ).
+    public string DateTakenDisplay => DateTaken?.ToString("g", LocalizedStrings.Instance.Culture) ?? string.Empty;
     public int? Width => Candidate.Exif?.Width;
     public int? Height => Candidate.Exif?.Height;
     public IEnumerable<string> AllTags =>
@@ -41,6 +44,7 @@ public partial class PhotoItemViewModel : ViewModelBase
     public bool HasDateTaken => DateTaken.HasValue;
     public bool HasDimensions => Width.HasValue && Height.HasValue;
     public bool HasAnyBasicExifInfo => HasCameraMake || HasCameraModel || HasDateTaken || HasDimensions;
+    public bool IsCharmera => Candidate.Exif?.IsCharmera == true;
 
     public PhotoItemViewModel(PhotoImportCandidate candidate)
     {
@@ -56,6 +60,7 @@ public partial class PhotoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(CameraMake));
         OnPropertyChanged(nameof(CameraModel));
         OnPropertyChanged(nameof(DateTaken));
+        OnPropertyChanged(nameof(DateTakenDisplay));
         OnPropertyChanged(nameof(Width));
         OnPropertyChanged(nameof(Height));
         OnPropertyChanged(nameof(AllTags));
@@ -64,6 +69,7 @@ public partial class PhotoItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasDateTaken));
         OnPropertyChanged(nameof(HasDimensions));
         OnPropertyChanged(nameof(HasAnyBasicExifInfo));
+        OnPropertyChanged(nameof(IsCharmera));
     }
 
     public void ApplyThumbnail(Bitmap? thumbnail)
@@ -82,5 +88,9 @@ public partial class PhotoItemViewModel : ViewModelBase
 
     // Called by MainViewModel (which owns the single LocalizedStrings subscription) for every
     // live photo item after a language switch, so already-rendered status badges retranslate.
-    public void RefreshLocalizedText() => OnPropertyChanged(nameof(StatusLabel));
+    public void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(StatusLabel));
+        OnPropertyChanged(nameof(DateTakenDisplay));
+    }
 }

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Charmera Importer
-Comment=USB photo importer for Kodak cameras
+Comment=Import photos from the Kodak Charmera with repaired metadata
 Exec=charmera-importer
 Icon=charmera-importer
 Terminal=false

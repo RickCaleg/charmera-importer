@@ -14,6 +14,12 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
+    private async void OnAboutClicked(object? sender, RoutedEventArgs e)
+    {
+        SettingsButton.Flyout?.Hide();
+        await new AboutWindow { DataContext = DataContext }.ShowDialog(this);
+    }
+
     private async void OnBrowseDestinationClicked(object? sender, RoutedEventArgs e)
     {
         var storageProvider = StorageProvider;

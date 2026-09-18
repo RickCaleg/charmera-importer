@@ -21,7 +21,6 @@ public sealed class FolderOrganizationOption : ObservableObject
     [
         new(FolderOrganizationScheme.YearMonth),
         new(FolderOrganizationScheme.YearMonthDay),
-        new(FolderOrganizationScheme.ByCameraModel),
         new(FolderOrganizationScheme.Flat),
     ];
 }

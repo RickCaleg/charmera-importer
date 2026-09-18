@@ -9,6 +9,33 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Added
+
+- **Kodak Charmera metadata repair.** Every imported photo gets repaired EXIF:
+  - the malformed capture date (`YYYY:MM:DD:HH:MM:SS`) is normalized;
+  - the 640×480 size tags are corrected to the real 1440×1080;
+  - the MakerNote that points outside the EXIF block is dropped;
+  - `Generalplus`/`CBB3` (the chip) is replaced by Kodak/Charmera.
+
+  The camera's files are never modified, and the image data is copied byte for byte. All
+  of this was verified on original Charmera photos. The README explains each defect and fix.
+- "About" window (Settings → About) with the app's features, privacy notes, links and
+  credits.
+
+### Changed
+
+- **The app is now exclusively for the Kodak Charmera.** Only Charmera memory cards are
+  listed (recognized by the `SPIDCIM` folder or the `GPEncoder` signature, not by name),
+  and only Charmera photos are imported.
+- Removed the "by camera model" folder organization (there's only one camera now).
+
+### Fixed
+
+- Photo dimensions come from the JPEG frame instead of EXIF tags that can be wrong.
+- Dates in the Charmera's malformed format are now read for every photo, so they're
+  organized and named by the real capture date instead of the file date.
+- Capture dates in the details panel follow the app's language instead of the OS locale.
+
 ## [0.3.0] - 2026-09-18
 
 ### Changed

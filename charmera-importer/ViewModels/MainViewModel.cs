@@ -101,6 +101,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool CheckForUpdatesAutomatically { get; set; } = true;
 
+
     [ObservableProperty]
     public partial UpdateInfo? AvailableUpdate { get; set; }
 
@@ -128,6 +129,7 @@ public partial class MainViewModel : ViewModelBase
         ? LocalizedStrings.Instance.UpdateDownloadButton
         : LocalizedStrings.Instance.UpdateInstallButton;
     public string CurrentVersionLabel => LocalizedStrings.Instance.VersionLabel(updateService.CurrentVersion.ToString(3));
+    public string VersionOnlyLabel => LocalizedStrings.Instance.VersionOnly(updateService.CurrentVersion.ToString(3));
 
     public bool HasDevice => SelectedDevice is not null;
     public bool HasDestination => !string.IsNullOrWhiteSpace(DestinationRootPath);
@@ -270,6 +272,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(UpdateBannerText));
         OnPropertyChanged(nameof(UpdateActionLabel));
         OnPropertyChanged(nameof(CurrentVersionLabel));
+        OnPropertyChanged(nameof(VersionOnlyLabel));
         foreach (var photo in Photos)
         {
             photo.RefreshLocalizedText();

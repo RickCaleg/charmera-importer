@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using charmera_importer.Localization;
@@ -64,7 +65,13 @@ public sealed class ImportService : IImportService
         var destinationFileName = ImportPathResolver.ResolveDestinationFileName(candidate, settings);
         var desiredPath = Path.Combine(destinationFolder, destinationFileName);
 
-        if (File.Exists(desiredPath) && await IsSameContentAsync(candidate, desiredPath, ct))
+        // Written with repaired EXIF (see CharmeraExif); the camera's file is never modified.
+        // Only a file the repair can't parse (null) is copied verbatim.
+        var repaired = await TryRepairCharmeraAsync(candidate, ct);
+        var expectedHash = repaired is null ? candidate.Sha256Hash : Convert.ToHexStringLower(SHA256.HashData(repaired));
+        var expectedSize = repaired?.LongLength ?? candidate.FileSizeBytes;
+
+        if (File.Exists(desiredPath) && await IsSameContentAsync(desiredPath, expectedHash, expectedSize, ct))
         {
             // Target already holds identical content (e.g. the history file was lost or this
             // is the first run against a pre-populated destination) — treat as a duplicate
@@ -78,26 +85,72 @@ public sealed class ImportService : IImportService
         var destinationPath = ImportPathResolver.ResolveNonCollidingPath(desiredPath, File.Exists);
 
         Directory.CreateDirectory(destinationFolder);
-        File.Copy(candidate.SourcePath, destinationPath, overwrite: false);
+        if (repaired is null)
+        {
+            File.Copy(candidate.SourcePath, destinationPath, overwrite: false);
+        }
+        else
+        {
+            await WriteRepairedAsync(repaired, destinationPath, candidate, ct);
+        }
 
         await historyService.RecordImportAsync(
             new ImportHistoryEntry(candidate.Sha256Hash, candidate.FileName, destinationPath, DateTime.UtcNow, candidate.FileSizeBytes),
             ct);
 
         candidate.Status = ImportStatus.Imported;
-        candidate.StatusMessage = LocalizedStrings.Instance.ImportedMessage;
+        candidate.StatusMessage = repaired is null
+            ? LocalizedStrings.Instance.ImportedMessage
+            : LocalizedStrings.Instance.ImportedRepairedMessage;
         TryDeleteSource(candidate, settings);
     }
 
-    private async Task<bool> IsSameContentAsync(PhotoImportCandidate candidate, string existingPath, CancellationToken ct)
+    private async Task<bool> IsSameContentAsync(string existingPath, string expectedHash, long expectedSize, CancellationToken ct)
     {
-        if (new FileInfo(existingPath).Length != candidate.FileSizeBytes)
+        if (new FileInfo(existingPath).Length != expectedSize)
         {
             return false;
         }
 
         var existingHash = await hashingService.ComputeSha256Async(existingPath, ct);
-        return existingHash == candidate.Sha256Hash;
+        return string.Equals(existingHash, expectedHash, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // A file the repair can't parse is imported untouched rather than failing: the photo
+    // matters more than its metadata.
+    private static async Task<byte[]?> TryRepairCharmeraAsync(PhotoImportCandidate candidate, CancellationToken ct)
+    {
+        try
+        {
+            var original = await File.ReadAllBytesAsync(candidate.SourcePath, ct);
+            return CharmeraExif.Fix(original, candidate.FileSystemDateModified ?? DateTime.Now, out _);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException)
+        {
+            return null;
+        }
+    }
+
+    // Written to a temporary name and renamed into place, so an interrupted import never
+    // leaves a truncated photo behind. Keeps the original's modification time, like a copy.
+    private static async Task WriteRepairedAsync(byte[] repaired, string destinationPath, PhotoImportCandidate candidate, CancellationToken ct)
+    {
+        var tempPath = destinationPath + ".charmera-tmp";
+        try
+        {
+            await File.WriteAllBytesAsync(tempPath, repaired, ct);
+            if (candidate.FileSystemDateModified is { } modified)
+            {
+                File.SetLastWriteTime(tempPath, modified);
+            }
+
+            File.Move(tempPath, destinationPath, overwrite: false);
+        }
+        catch
+        {
+            File.Delete(tempPath);
+            throw;
+        }
     }
 
     // Only ever called once a photo is confirmed safely stored (freshly copied, or already

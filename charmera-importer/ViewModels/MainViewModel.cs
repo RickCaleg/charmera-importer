@@ -101,13 +101,6 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool CheckForUpdatesAutomatically { get; set; } = true;
 
-    [ObservableProperty]
-    public partial bool RepairCharmeraMetadata { get; set; } = true;
-
-    // True once any scanned photo turns out to come from a Kodak Charmera (EXIF is read in the
-    // background, so this flips on as results arrive).
-    [ObservableProperty]
-    public partial bool IsCharmeraDetected { get; set; }
 
     [ObservableProperty]
     public partial UpdateInfo? AvailableUpdate { get; set; }
@@ -223,7 +216,6 @@ public partial class MainViewModel : ViewModelBase
         DestinationRootPath = initialSettings.DestinationRootPath;
         AppendOriginalFileName = initialSettings.AppendOriginalFileName;
         CheckForUpdatesAutomatically = initialSettings.CheckForUpdates;
-        RepairCharmeraMetadata = initialSettings.RepairCharmeraMetadata;
         suppressSettingsPersistence = false;
 
         LocalizedStrings.Instance.PropertyChanged += OnLocalizationChanged;
@@ -300,8 +292,7 @@ public partial class MainViewModel : ViewModelBase
             SelectedOrganizationOption.Value,
             SelectedNamingPreset.Value,
             AppendOriginalFileName,
-            CheckForUpdatesAutomatically,
-            RepairCharmeraMetadata);
+            CheckForUpdatesAutomatically);
 
         _ = settingsService.SaveAsync(settings);
     }
@@ -331,8 +322,6 @@ public partial class MainViewModel : ViewModelBase
     }
 
     partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => PersistSettings();
-
-    partial void OnRepairCharmeraMetadataChanged(bool value) => PersistSettings();
 
     partial void OnAvailableUpdateChanged(UpdateInfo? value)
     {
@@ -538,7 +527,6 @@ public partial class MainViewModel : ViewModelBase
         scanCts?.Cancel();
         Photos.Clear();
         SelectedPhoto = null;
-        IsCharmeraDetected = false;
 
         if (SelectedDevice is null)
         {
@@ -593,10 +581,6 @@ public partial class MainViewModel : ViewModelBase
                 {
                     item.ApplyThumbnail(thumbnail);
                     item.ApplyExif(exif);
-                    if (exif?.IsCharmera == true)
-                    {
-                        IsCharmeraDetected = true;
-                    }
                 });
             }
             catch (OperationCanceledException)
@@ -619,7 +603,6 @@ public partial class MainViewModel : ViewModelBase
         NamingPreset = SelectedNamingPreset.Value,
         AppendOriginalFileName = AppendOriginalFileName,
         DeleteSourceAfterImport = DeleteSourceAfterImport,
-        RepairCharmeraMetadata = RepairCharmeraMetadata,
     };
 
     [RelayCommand]

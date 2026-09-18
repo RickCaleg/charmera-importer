@@ -23,9 +23,10 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            IRemovableDeviceService deviceService = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? new WindowsRemovableDeviceService()
-                : new LinuxRemovableDeviceService();
+            IRemovableDeviceService deviceService = new CharmeraDeviceFilter(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? new WindowsRemovableDeviceService()
+                    : new LinuxRemovableDeviceService());
 
             var appDataDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

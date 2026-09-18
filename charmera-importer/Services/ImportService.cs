@@ -65,11 +65,9 @@ public sealed class ImportService : IImportService
         var destinationFileName = ImportPathResolver.ResolveDestinationFileName(candidate, settings);
         var desiredPath = Path.Combine(destinationFolder, destinationFileName);
 
-        // Charmera photos are written with repaired EXIF; everything else is copied verbatim.
-        // The camera's original file is never modified either way.
-        var repaired = settings.RepairCharmeraMetadata && candidate.Exif?.IsCharmera == true
-            ? await TryRepairCharmeraAsync(candidate, ct)
-            : null;
+        // Written with repaired EXIF (see CharmeraExif); the camera's file is never modified.
+        // Only a file the repair can't parse (null) is copied verbatim.
+        var repaired = await TryRepairCharmeraAsync(candidate, ct);
         var expectedHash = repaired is null ? candidate.Sha256Hash : Convert.ToHexStringLower(SHA256.HashData(repaired));
         var expectedSize = repaired?.LongLength ?? candidate.FileSizeBytes;
 

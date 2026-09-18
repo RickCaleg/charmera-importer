@@ -22,8 +22,6 @@ public static class ImportPathResolver
                 Path.Combine(settings.DestinationRootPath, date.ToString("yyyy", CultureInfo.InvariantCulture), date.ToString("MM", CultureInfo.InvariantCulture)),
             FolderOrganizationScheme.YearMonthDay =>
                 Path.Combine(settings.DestinationRootPath, date.ToString("yyyy", CultureInfo.InvariantCulture), date.ToString("MM", CultureInfo.InvariantCulture), date.ToString("dd", CultureInfo.InvariantCulture)),
-            FolderOrganizationScheme.ByCameraModel =>
-                Path.Combine(settings.DestinationRootPath, SanitizeForFileSystem(candidate.Exif?.CameraModel ?? "Unknown Camera")),
             _ => throw new ArgumentOutOfRangeException(nameof(settings)),
         };
     }
@@ -67,10 +65,4 @@ public static class ImportPathResolver
         return candidatePath;
     }
 
-    private static string SanitizeForFileSystem(string name)
-    {
-        var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = new string(name.Select(c => invalidChars.Contains(c) ? '_' : c).ToArray()).Trim();
-        return string.IsNullOrEmpty(sanitized) ? "Unknown Camera" : sanitized;
-    }
 }

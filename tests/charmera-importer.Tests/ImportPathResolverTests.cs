@@ -35,7 +35,6 @@ public class ImportPathResolverTests
     [InlineData(FolderOrganizationScheme.Flat, new string[0])]
     [InlineData(FolderOrganizationScheme.YearMonth, new[] { "2026", "03" })]
     [InlineData(FolderOrganizationScheme.YearMonthDay, new[] { "2026", "03", "15" })]
-    [InlineData(FolderOrganizationScheme.ByCameraModel, new[] { "PIXPRO FZ55" })]
     public void ResolveDestinationFolder_FollowsScheme(FolderOrganizationScheme scheme, string[] expectedSubfolders)
     {
         var folder = ImportPathResolver.ResolveDestinationFolder(Candidate(), Settings(scheme));
@@ -43,13 +42,6 @@ public class ImportPathResolverTests
         Assert.Equal(Path.Combine([Root, .. expectedSubfolders]), folder);
     }
 
-    [Fact]
-    public void ResolveDestinationFolder_FallsBackWhenCameraModelMissing()
-    {
-        var folder = ImportPathResolver.ResolveDestinationFolder(Candidate(cameraModel: null), Settings(FolderOrganizationScheme.ByCameraModel));
-
-        Assert.Equal(Path.Combine(Root, "Unknown Camera"), folder);
-    }
 
     [Theory]
     [InlineData(FileNamingPreset.CompactDateTime, true, "20260315_143022_IMG_0001.JPG")]

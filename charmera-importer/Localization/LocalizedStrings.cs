@@ -55,7 +55,6 @@ public sealed class LocalizedStrings : ObservableObject
 
     public string OrgYearMonth => Get("Org_YearMonth");
     public string OrgYearMonthDay => Get("Org_YearMonthDay");
-    public string OrgByCameraModel => Get("Org_ByCameraModel");
     public string OrgFlat => Get("Org_Flat");
 
     public string ScanningStatus => Get("Status_Scanning");
@@ -65,9 +64,7 @@ public sealed class LocalizedStrings : ObservableObject
     public string AlreadyAtDestinationMessage => Get("Import_AlreadyAtDestination");
     public string ImportedMessage => Get("Import_Success");
     public string ImportedRepairedMessage => Get("Import_SuccessRepaired");
-    public string DestRepairCharmera => Get("Dest_RepairCharmera");
-    public string DestRepairCharmeraHint => Get("Dest_RepairCharmeraHint");
-    public string SourceCharmeraDetected => Get("Source_CharmeraDetected");
+    public string AppSubtitle => Get("App_Subtitle");
     public string DetailCharmeraNote => Get("Detail_CharmeraNote");
     public string SettingsAbout => Get("Settings_About");
     public string AboutTitle => Get("About_Title");
@@ -150,7 +147,6 @@ public sealed class LocalizedStrings : ObservableObject
     {
         FolderOrganizationScheme.YearMonth => OrgYearMonth,
         FolderOrganizationScheme.YearMonthDay => OrgYearMonthDay,
-        FolderOrganizationScheme.ByCameraModel => OrgByCameraModel,
         _ => OrgFlat,
     };
 

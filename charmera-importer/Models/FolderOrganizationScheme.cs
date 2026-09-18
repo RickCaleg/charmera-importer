@@ -8,5 +8,4 @@ public enum FolderOrganizationScheme
     Flat,
     YearMonth,
     YearMonthDay,
-    ByCameraModel,
 }

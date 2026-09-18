@@ -18,12 +18,12 @@ vendor: "Richardson Calegari Saconi"
 homepage: "https://github.com/RickCaleg/charmera-importer"
 license: MIT
 description: |
-  USB photo importer for Kodak cameras.
-  Lists removable USB devices, shows their photos as thumbnails, extracts
-  EXIF metadata, and imports them with configurable folder organization,
-  file naming, and SHA-256 duplicate detection. Self-contained build:
-  bundles its own .NET runtime, no external dependencies beyond a standard
-  Linux desktop.
+  Photo importer for the Kodak Charmera keychain camera.
+  Recognizes the camera when plugged in, repairs the broken EXIF metadata
+  its firmware writes (invalid date format, wrong image size, corrupt
+  MakerNote, chip name as camera), organizes photos by capture date, and
+  skips duplicates by content (SHA-256). Self-contained build: bundles its
+  own .NET runtime, no external dependencies beyond a standard Linux desktop.
 
 contents:
   - src: "${LINUX_BINARY}"

@@ -30,6 +30,8 @@ public class CharmeraExifTests
         // Guards the premise: a standard reader can't use this file's date or dimensions.
         var directories = ReadWithMetadataExtractor(CharmeraSample.Build());
         var subIfd = directories.OfType<ExifSubIfdDirectory>().First();
+        var ifd0 = directories.OfType<ExifIfd0Directory>().First();
+        Assert.Equal("Generalplus", ifd0.GetString(ExifDirectoryBase.TagMake)?.Trim());
 
         Assert.False(subIfd.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out _));
         Assert.Equal(640, subIfd.GetInt32(ExifDirectoryBase.TagExifImageWidth));
@@ -53,7 +55,6 @@ public class CharmeraExifTests
 
         Assert.Equal(new DateTime(2026, 3, 3, 12, 16, 29), info.DateTaken);
         Assert.Equal((1440, 1080), (info.Width, info.Height));
-        Assert.Null(info.Make);
         Assert.True(info.HadExif);
     }
 

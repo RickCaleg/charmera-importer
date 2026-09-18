@@ -62,8 +62,9 @@ public sealed class ExifService : IExifService
 
             if (charmera is not null)
             {
-                cameraMake = charmera.Make ?? CharmeraExif.DefaultMake;
-                cameraModel = charmera.Model ?? CharmeraExif.DefaultModel;
+                // The file says "Generalplus"/"CBB3" (the chip); the import writes the camera.
+                cameraMake = CharmeraExif.CameraMake;
+                cameraModel = CharmeraExif.CameraModel;
                 dateTaken = charmera.DateTaken ?? dateTaken;
                 width = charmera.Width > 0 ? charmera.Width : width;
                 height = charmera.Height > 0 ? charmera.Height : height;

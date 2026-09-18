@@ -3,10 +3,11 @@ using System.Text;
 
 namespace charmera_importer.Tests;
 
-// Builds JPEGs with the metadata defects documented for the Kodak Charmera (Generalplus
-// encoder): "YYYY:MM:DD:HH:MM:SS" dates, EXIF dimensions of 640x480 on a 1440x1080 frame,
-// a MakerNote whose offset points outside the EXIF block, no Make/Model, and the
-// "GPEncoder" JPEG comment.
+// Builds JPEGs whose EXIF matches original Kodak Charmera files byte-structure-wise (checked
+// against unedited camera files): little-endian TIFF, Make/Model "Generalplus"/"CBB3" padded
+// with spaces, "YYYY:MM:DD:HH:MM:SS" dates, PixelX/YDimension 640x480 on a 1440x1080 frame, a
+// MakerNote whose offset points exactly at the end of the EXIF block, and the "GPEncoder"
+// JPEG comment.
 internal static class CharmeraSample
 {
     public const string MalformedDate = "2026:03:03:12:16:29";
@@ -14,7 +15,7 @@ internal static class CharmeraSample
     // Stand-in for the entropy-coded image data; only its byte-for-byte survival matters.
     public static readonly byte[] ScanData = Enumerable.Range(0, 64).Select(i => (byte)(i * 7 % 250)).ToArray();
 
-    public static byte[] Build(bool withExif = true, bool bigEndian = true, string date = MalformedDate)
+    public static byte[] Build(bool withExif = true, bool bigEndian = false, string date = MalformedDate)
     {
         using var jpeg = new MemoryStream();
         jpeg.Write([0xFF, 0xD8]);
@@ -25,7 +26,7 @@ internal static class CharmeraSample
             WriteSegment(jpeg, 0xE1, [.. "Exif\0\0"u8.ToArray(), .. tiff]);
         }
 
-        WriteSegment(jpeg, 0xFE, "GPEncoder v1.0"u8.ToArray());
+        WriteSegment(jpeg, 0xFE, "GPEncoder      "u8.ToArray());
 
         // SOF0: precision 8, height 1080, width 1440, 1 component.
         WriteSegment(jpeg, 0xC0, [8, 0x04, 0x38, 0x05, 0xA0, 1, 1, 0x11, 0]);
@@ -89,23 +90,30 @@ internal static class CharmeraSample
         U16(2, 42);
         U32(4, 8);
 
+        var make = Encoding.ASCII.GetBytes("Generalplus            \0"); // 24 bytes
+        var model = Encoding.ASCII.GetBytes("CBB3           \0");         // 16 bytes
         var dateBytes = Encoding.ASCII.GetBytes(date + "\0");
-        const int dateOffset = 200, exifIfd = 60;
+        const int exifIfd = 62, makeOffset = 140, modelOffset = 164, dateOffset = 180;
+        var end = dateOffset + dateBytes.Length;
 
-        // IFD0 @8: DateTime, ExifIFD pointer.
-        U16(8, 2);
-        Entry(10, 0x0132, 2, (uint)dateBytes.Length, dateOffset);
-        Entry(22, 0x8769, 4, 1, exifIfd);
+        // IFD0 @8: Make, Model, DateTime, ExifIFD pointer.
+        U16(8, 4);
+        Entry(10, 0x010F, 2, (uint)make.Length, makeOffset);
+        Entry(22, 0x0110, 2, (uint)model.Length, modelOffset);
+        Entry(34, 0x0132, 2, (uint)dateBytes.Length, dateOffset);
+        Entry(46, 0x8769, 4, 1, exifIfd);
 
-        // Exif IFD: DateTimeOriginal, DateTimeDigitized, MakerNote (bad offset), 640x480.
+        // Exif IFD: DateTimeOriginal, DateTimeDigitized, MakerNote (offset = end of block), 640x480.
         U16(exifIfd, 5);
         Entry(exifIfd + 2, 0x9003, 2, (uint)dateBytes.Length, dateOffset);
         Entry(exifIfd + 14, 0x9004, 2, (uint)dateBytes.Length, dateOffset);
-        Entry(exifIfd + 26, 0x927C, 7, 4096, 0x7FFFFF00);
+        Entry(exifIfd + 26, 0x927C, 7, 1164, (uint)end);
         Entry(exifIfd + 38, 0xA002, 3, 1, 640);
         Entry(exifIfd + 50, 0xA003, 3, 1, 480);
 
+        make.CopyTo(buffer, makeOffset);
+        model.CopyTo(buffer, modelOffset);
         dateBytes.CopyTo(buffer, dateOffset);
-        return buffer[..(dateOffset + dateBytes.Length)];
+        return buffer[..end];
     }
 }

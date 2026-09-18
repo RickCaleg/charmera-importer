@@ -10,12 +10,6 @@ namespace charmera_importer.Services;
 
 public sealed class PhotoScannerService : IPhotoScannerService
 {
-    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".jpg", ".jpeg", ".png", ".heic", ".heif", ".tif", ".tiff", ".bmp", ".webp", ".gif",
-        ".cr2", ".nef", ".arw", ".dng",
-    };
-
     public Task<IReadOnlyList<PhotoImportCandidate>> ScanAsync(string rootPath, CancellationToken ct = default)
     {
         return Task.Run<IReadOnlyList<PhotoImportCandidate>>(() =>
@@ -29,7 +23,9 @@ public sealed class PhotoScannerService : IPhotoScannerService
             {
                 ct.ThrowIfCancellationRequested();
 
-                if (!SupportedExtensions.Contains(Path.GetExtension(filePath)))
+                // Charmera photos only (JPEGs carrying its encoder signature): anything else on
+                // the card, e.g. files copied onto it from elsewhere, isn't ours to import.
+                if (!CharmeraExif.IsJpegName(filePath) || !CharmeraExif.IsCharmeraFile(filePath))
                 {
                     continue;
                 }

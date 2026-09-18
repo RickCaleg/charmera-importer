@@ -40,12 +40,11 @@ public sealed class CharmeraImportTests : IDisposable
     private ImportService NewImporter(string historyFile) =>
         new(new Sha256HashingService(), new JsonImportHistoryService(historyFile));
 
-    private ImportSettings Settings(bool repair = true) => new()
+    private ImportSettings Settings() => new()
     {
         DestinationRootPath = destination,
         OrganizationScheme = FolderOrganizationScheme.YearMonth,
         AppendOriginalFileName = true,
-        RepairCharmeraMetadata = repair,
     };
 
     private static Task Import(ImportService importer, PhotoImportCandidate candidate, ImportSettings settings) =>
@@ -60,7 +59,8 @@ public sealed class CharmeraImportTests : IDisposable
         Assert.True(candidate.Exif.IsCharmera);
         Assert.Equal(new DateTime(2026, 3, 3, 12, 16, 29), candidate.Exif.DateTaken);
         Assert.Equal((1440, 1080), (candidate.Exif.Width, candidate.Exif.Height));
-        Assert.Equal("Charmera", candidate.Exif.CameraModel);
+        Assert.Equal("Kodak", candidate.Exif.CameraMake); // not the file's "Generalplus"
+        Assert.Equal("Charmera", candidate.Exif.CameraModel); // not "CBB3"
     }
 
     [Fact]
@@ -111,14 +111,46 @@ public sealed class CharmeraImportTests : IDisposable
     }
 
     [Fact]
-    public async Task Import_WithRepairDisabled_CopiesVerbatim()
+    public async Task Import_UnparseableFile_IsCopiedVerbatimRatherThanLost()
     {
-        var original = CharmeraSample.Build();
-        var candidate = await CandidateAsync(original);
+        // Carries the signature but has no frame header, so the repair can't run.
+        byte[] broken = [0xFF, 0xD8, 0xFF, 0xFE, 0x00, 0x0B, .. "GPEncoder"u8.ToArray(), 0xFF, 0xD9];
+        var candidate = await CandidateAsync(broken);
 
-        await Import(NewImporter(Path.Combine(root, "history.json")), candidate, Settings(repair: false));
+        await Import(NewImporter(Path.Combine(root, "history.json")), candidate, Settings());
 
+        Assert.Equal(ImportStatus.Imported, candidate.Status);
         var imported = System.IO.Directory.GetFiles(destination, "*", SearchOption.AllDirectories).Single();
-        Assert.Equal(original, await File.ReadAllBytesAsync(imported));
+        Assert.Equal(broken, await File.ReadAllBytesAsync(imported));
+    }
+
+    [Fact]
+    public async Task Scanner_ListsOnlyCharmeraPhotos()
+    {
+        await File.WriteAllBytesAsync(Path.Combine(camera, "PICT0001.JPG"), CharmeraSample.Build());
+        await File.WriteAllBytesAsync(Path.Combine(camera, "other-camera.jpg"), [0xFF, 0xD8, 0xFF, 0xD9]);
+        await File.WriteAllBytesAsync(Path.Combine(camera, "notes.png"), [0x89, 0x50, 0x4E, 0x47]);
+
+        var found = await new PhotoScannerService().ScanAsync(Path.GetDirectoryName(camera)!);
+
+        Assert.Equal("PICT0001.JPG", Assert.Single(found).FileName);
+    }
+
+    [Fact]
+    public async Task IsCharmeraVolume_RecognisesTheCardByContentNotName()
+    {
+        var volume = Path.GetDirectoryName(camera)!;
+        Assert.False(CharmeraExif.IsCharmeraVolume(volume)); // DCIM alone isn't enough
+
+        await File.WriteAllBytesAsync(Path.Combine(camera, "IMG_0001.JPG"), [0xFF, 0xD8, 0xFF, 0xD9]);
+        Assert.False(CharmeraExif.IsCharmeraVolume(volume)); // another camera's photo
+
+        await File.WriteAllBytesAsync(Path.Combine(camera, "PICT0001.JPG"), CharmeraSample.Build());
+        Assert.True(CharmeraExif.IsCharmeraVolume(volume)); // encoder signature
+
+        var cardWithFolder = Path.Combine(root, "card2");
+        System.IO.Directory.CreateDirectory(Path.Combine(cardWithFolder, "DCIM"));
+        System.IO.Directory.CreateDirectory(Path.Combine(cardWithFolder, "SPIDCIM"));
+        Assert.True(CharmeraExif.IsCharmeraVolume(cardWithFolder)); // the camera's own folder, even when empty
     }
 }

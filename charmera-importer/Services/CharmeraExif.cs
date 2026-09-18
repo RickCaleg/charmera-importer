@@ -13,8 +13,6 @@ namespace charmera_importer.Services;
 public sealed record CharmeraExifInfo(
     int Width,
     int Height,
-    string? Make,
-    string? Model,
     int Orientation,
     DateTime? DateTaken,
     bool HadExif);
@@ -22,26 +20,29 @@ public sealed record CharmeraExifInfo(
 public sealed record CharmeraFixResult(
     int Width,
     int Height,
-    string Make,
-    string Model,
     int Orientation,
     DateTime DateTaken,
     bool DateFromExif);
 
-// Repairs the broken EXIF written by the Kodak Charmera (Generalplus chipset):
-//   - dates stored as "YYYY:MM:DD:HH:MM:SS" instead of "YYYY:MM:DD HH:MM:SS", which other
-//     software rejects, so photos land on the wrong day or have no date at all;
-//   - ExifImageWidth/Height claiming 640x480 for a 1440x1080 image;
-//   - a MakerNote with bad IFD offsets that makes editors refuse to touch the file;
-//   - no camera Make/Model.
+// Repairs the broken EXIF written by the Kodak Charmera's Generalplus firmware. Verified
+// against original, unedited Charmera files (little-endian TIFF, identical structure in all):
+//   - DateTime/DateTimeOriginal/DateTimeDigitized are "YYYY:MM:DD:HH:MM:SS" instead of
+//     "YYYY:MM:DD HH:MM:SS", which standard readers reject, so the capture date is lost;
+//   - PixelX/YDimension say 640x480 while the JPEG is 1440x1080. 640x480 is most likely the
+//     sensor's capture size (the camera upscales internally; the images carry VGA-level
+//     detail), but EXIF defines these tags as the size of the image in the file;
+//   - the MakerNote's offset points exactly at the end of the EXIF block, i.e. outside it,
+//     which makes editors refuse to write the file;
+//   - Make/Model are "Generalplus"/"CBB3": the chip, not the camera.
 // Fix() writes a fresh, minimal EXIF block with the corrected values and keeps every other
-// JPEG segment, including the compressed image data, byte-for-byte. Known issues documented
-// by https://github.com/jphastings/charmera and https://github.com/RAIT-09/kodak-charmera-exif-fixer
-// (both MIT); this is an independent C# implementation of the same approach.
+// JPEG segment, including the compressed image data, byte-for-byte. The defects were first
+// documented by https://github.com/jphastings/charmera and
+// https://github.com/RAIT-09/kodak-charmera-exif-fixer (both MIT); this is an independent C#
+// implementation of the same approach.
 public static class CharmeraExif
 {
-    public const string DefaultMake = "Kodak";
-    public const string DefaultModel = "Charmera";
+    public const string CameraMake = "Kodak";
+    public const string CameraModel = "Charmera";
 
     // Published specs (Kodak/Wikipedia): fixed 35 mm-equivalent f/2.4 lens. The real focal
     // length isn't published, so only the 35 mm equivalent is written.
@@ -84,6 +85,57 @@ public static class CharmeraExif
     public static bool HasCharmeraSignature(ReadOnlySpan<byte> jpegHeader) =>
         jpegHeader.Length >= 2 && jpegHeader[0] == 0xFF && jpegHeader[1] == 0xD8
         && jpegHeader.IndexOf(Signature) >= 0;
+
+    // A Charmera memory card: DCIM plus either the SPIDCIM folder the camera creates next to
+    // it, or a photo carrying the encoder signature. Judged by content, never by volume label,
+    // so a renamed card is still recognized and other cameras/drives are not.
+    private const int MaxFilesToSniff = 5;
+
+    public static bool IsCharmeraVolume(string rootPath)
+    {
+        try
+        {
+            var dcim = Path.Combine(rootPath, "DCIM");
+            if (!Directory.Exists(dcim))
+            {
+                return false;
+            }
+
+            if (Directory.Exists(Path.Combine(rootPath, "SPIDCIM")))
+            {
+                return true;
+            }
+
+            var sniffed = 0;
+            foreach (var file in Directory.EnumerateFiles(dcim, "*", SearchOption.AllDirectories))
+            {
+                if (!IsJpegName(file))
+                {
+                    continue;
+                }
+
+                if (IsCharmeraFile(file))
+                {
+                    return true;
+                }
+
+                if (++sniffed >= MaxFilesToSniff)
+                {
+                    break;
+                }
+            }
+        }
+        catch
+        {
+            // Unreadable volume: not something we can import from anyway.
+        }
+
+        return false;
+    }
+
+    public static bool IsJpegName(string path) =>
+        path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+        || path.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase);
 
     public static bool IsCharmeraFile(string path)
     {
@@ -142,8 +194,6 @@ public static class CharmeraExif
         return new CharmeraExifInfo(
             layout.Width,
             layout.Height,
-            NullIfBlank(exif?.Make),
-            NullIfBlank(exif?.Model),
             exif?.Orientation is >= 1 and <= 8 ? exif.Orientation : 1,
             PickDate(exif),
             exif is not null);
@@ -160,14 +210,12 @@ public static class CharmeraExif
         }
 
         var date = info.DateTaken ?? fallbackDate;
-        var make = info.Make ?? DefaultMake;
-        var model = info.Model ?? DefaultModel;
         var dateText = date.ToString(ExifDateFormat, CultureInfo.InvariantCulture);
 
         var ifd0 = new List<IfdEntry>
         {
-            IfdEntry.Ascii(TagMake, make),
-            IfdEntry.Ascii(TagModel, model),
+            IfdEntry.Ascii(TagMake, CameraMake),
+            IfdEntry.Ascii(TagModel, CameraModel),
             IfdEntry.Short(TagOrientation, (ushort)info.Orientation),
             IfdEntry.Ascii(TagDateTime, dateText),
         };
@@ -180,7 +228,7 @@ public static class CharmeraExif
             IfdEntry.Long(TagPixelXDimension, (uint)info.Width),
             IfdEntry.Long(TagPixelYDimension, (uint)info.Height),
             IfdEntry.Short(TagFocalLengthIn35mm, FocalLengthIn35mm),
-            IfdEntry.Ascii(TagLensMake, DefaultMake),
+            IfdEntry.Ascii(TagLensMake, CameraMake),
             IfdEntry.Ascii(TagLensModel, LensModel),
         };
 
@@ -208,16 +256,13 @@ public static class CharmeraExif
         segment.CopyTo(output, cutStart);
         jpeg.AsSpan(cutEnd).CopyTo(output.AsSpan(cutStart + segment.Length));
 
-        result = new CharmeraFixResult(info.Width, info.Height, make, model, info.Orientation, date, info.DateTaken is not null);
+        result = new CharmeraFixResult(info.Width, info.Height, info.Orientation, date, info.DateTaken is not null);
         return output;
     }
 
     private static DateTime? PickDate(TiffInfo? exif) =>
         exif is null ? null
         : ParseExifDate(exif.DateTimeOriginal) ?? ParseExifDate(exif.DateTimeDigitized) ?? ParseExifDate(exif.DateTime);
-
-    private static string? NullIfBlank(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     // ---- JPEG segment scan -------------------------------------------------------------
 
@@ -294,8 +339,6 @@ public static class CharmeraExif
 
     private sealed class TiffInfo
     {
-        public string? Make;
-        public string? Model;
         public int Orientation;
         public string? DateTime;
         public string? DateTimeOriginal;
@@ -333,8 +376,6 @@ public static class CharmeraExif
         {
             switch (tag)
             {
-                case TagMake: info.Make = reader.Ascii(type, count, valueOffset); break;
-                case TagModel: info.Model = reader.Ascii(type, count, valueOffset); break;
                 case TagDateTime: info.DateTime = reader.Ascii(type, count, valueOffset); break;
                 case TagOrientation when type == TypeShort: info.Orientation = reader.U16(valueOffset); break;
                 case TagExifIfdPointer when type == TypeLong: exifOffset = (int)reader.U32(valueOffset); break;

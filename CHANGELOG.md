@@ -9,6 +9,8 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-18
+
 ### Changed
 
 - Redesigned the main window around the import workflow: three numbered steps

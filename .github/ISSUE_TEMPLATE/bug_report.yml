@@ -22,7 +22,7 @@ body:
     attributes:
       label: App version
       description: Shown at the bottom of the left sidebar.
-      placeholder: "0.2.2"
+      placeholder: "0.3.0"
     validations:
       required: true
   - type: dropdown

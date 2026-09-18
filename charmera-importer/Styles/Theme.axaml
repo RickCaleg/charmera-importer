@@ -125,6 +125,127 @@
     <Setter Property="Foreground" Value="{StaticResource InkSecondaryBrush}" />
   </Style>
 
+  <!-- Compact variant of the secondary button, for inline actions ("Change") -->
+  <Style Selector="Button.secondary.compact">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+
+  <!-- Icon-only button on the dark app bar (settings) -->
+  <Style Selector="Button.appBarIcon">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="9" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.appBarIcon:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#22FFFFFF" />
+  </Style>
+  <Style Selector="Button.appBarIcon:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#33FFFFFF" />
+  </Style>
+
+  <!-- Icon-only button on light surfaces (refresh devices, close details) -->
+  <Style Selector="Button.surfaceIcon">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Width" Value="42" />
+    <Setter Property="Height" Value="42" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.surfaceIcon.small">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="Button.surfaceIcon:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource SurfaceAppBrush}" />
+  </Style>
+
+  <!-- Line icons (Path) share one stroke language -->
+  <Style Selector="Path.lineIcon">
+    <Setter Property="Stroke" Value="{StaticResource InkPrimaryBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+
+  <!-- Workflow steps: numbered badge that turns into a red check once the step is complete -->
+  <Style Selector="Border.stepBadge">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+    <Setter Property="BorderThickness" Value="1.5" />
+  </Style>
+  <Style Selector="Border.stepBadge.done">
+    <Setter Property="Background" Value="{StaticResource KodakRedBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource KodakRedBrush}" />
+  </Style>
+  <Style Selector="Border.stepBadge TextBlock">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{StaticResource InkSecondaryBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.stepConnector">
+    <Setter Property="Width" Value="1.5" />
+    <Setter Property="Background" Value="{StaticResource BorderSubtleBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,6" />
+  </Style>
+  <Style Selector="TextBlock.stepTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{StaticResource InkPrimaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- Typography helpers -->
+  <Style Selector="TextBlock.fieldLabel">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{StaticResource InkSecondaryBrush}" />
+  </Style>
+  <Style Selector="TextBlock.caption">
+    <Setter Property="FontSize" Value="12.5" />
+    <Setter Property="Foreground" Value="{StaticResource InkSecondaryBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- Destination path + example path boxes -->
+  <Style Selector="Border.inset">
+    <Setter Property="Background" Value="{StaticResource SurfaceAppBrush}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Menlo, Noto Sans Mono, DejaVu Sans Mono, Liberation Mono, monospace" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{StaticResource InkPrimaryBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- Settings popover -->
+  <Style Selector="FlyoutPresenter.settings">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MaxWidth" Value="400" />
+  </Style>
+
   <!-- Thumbnail grid: strip the default Fluent selection/hover chrome so our own
        card border (see MainWindow.axaml "photoCard" Border) provides the highlight. -->
   <Style Selector="ListBox.photoGrid">

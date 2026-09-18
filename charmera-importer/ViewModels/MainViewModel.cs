@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,21 @@ public partial class MainViewModel : ViewModelBase
 {
     private const int ThumbnailAndExifConcurrency = 4;
 
+    // How often the device list is re-read, so plugging the camera in "just works" without
+    // pressing refresh. Reading /proc/mounts (or DriveInfo) is cheap enough for this.
+    private static readonly TimeSpan DevicePollInterval = TimeSpan.FromSeconds(3);
+
+    // Stand-in photo for the destination path preview, so it reads the same with or without a
+    // camera connected (real photos' EXIF arrives asynchronously and would make it jump).
+    private static readonly PhotoImportCandidate PreviewSamplePhoto = new()
+    {
+        SourcePath = "IMG_0001.JPG",
+        FileName = "IMG_0001.JPG",
+        FileSizeBytes = 0,
+        Exif = new PhotoExifData(null, "Kodak PIXPRO", new DateTime(2026, 3, 15, 14, 30, 22),
+            null, null, null, null, null, null, null, null, new Dictionary<string, string>()),
+    };
+
     private readonly IRemovableDeviceService deviceService;
     private readonly IPhotoScannerService scannerService;
     private readonly IExifService exifService;
@@ -28,6 +44,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly Action requestShutdown;
 
     private CancellationTokenSource? scanCts;
+    private readonly DispatcherTimer devicePollTimer;
+    private bool isRefreshingDevices;
     private bool suppressSettingsPersistence;
 
     public IReadOnlyList<FolderOrganizationOption> OrganizationOptions { get; } = FolderOrganizationOption.All;
@@ -111,9 +129,54 @@ public partial class MainViewModel : ViewModelBase
         : LocalizedStrings.Instance.UpdateInstallButton;
     public string CurrentVersionLabel => LocalizedStrings.Instance.VersionLabel(updateService.CurrentVersion.ToString(3));
 
-    public bool ShowEmptyState => Photos.Count == 0 && !IsScanning;
+    public bool HasDevice => SelectedDevice is not null;
+    public bool HasDestination => !string.IsNullOrWhiteSpace(DestinationRootPath);
+
+    // Step completion drives the numbered badges in the workflow panel.
+    public bool IsSourceStepDone => HasDevice && Photos.Count > 0 && !IsScanning;
+    public bool IsDestinationStepDone => HasDestination;
+
+    public bool ShowNoDeviceState => !HasDevice;
+    public bool ShowScanningState => HasDevice && IsScanning && Photos.Count == 0;
+    public bool ShowNoPhotosState => HasDevice && !IsScanning && Photos.Count == 0;
+
     public string PhotosCountLabel => LocalizedStrings.Instance.PhotosCount(Photos.Count);
     public string DestinationRootPathDisplay => DestinationRootPath ?? LocalizedStrings.Instance.NoDestinationSelected;
+
+    public string DestinationFolderName => string.IsNullOrWhiteSpace(DestinationRootPath)
+        ? string.Empty
+        : Path.GetFileName(Path.TrimEndingDirectorySeparator(DestinationRootPath)) is { Length: > 0 } name
+            ? name
+            : DestinationRootPath;
+
+    public string SourceSummary => !HasDevice ? LocalizedStrings.Instance.SourceNoDevice
+        : IsScanning && Photos.Count == 0 ? LocalizedStrings.Instance.ScanningStatus
+        : LocalizedStrings.Instance.PhotosFound(Photos.Count);
+
+    public string DestinationPreview
+    {
+        get
+        {
+            var settings = BuildImportSettings(string.Empty);
+            var folder = ImportPathResolver.ResolveDestinationFolder(PreviewSamplePhoto, settings);
+            var fileName = ImportPathResolver.ResolveDestinationFileName(PreviewSamplePhoto, settings);
+            // Zero-width spaces after each separator let the path wrap between folders instead
+            // of mid-name when the panel is narrow.
+            return Path.Combine(folder, fileName)
+                .Replace(Path.DirectorySeparatorChar.ToString(), Path.DirectorySeparatorChar + "\u200B");
+        }
+    }
+
+    public string ImportButtonLabel => LocalizedStrings.Instance.ImportButton(Photos.Count);
+
+    // Explains a disabled Import button instead of leaving the user guessing.
+    public string? ImportHint => IsImporting ? null
+        : !HasDevice ? LocalizedStrings.Instance.HintSelectCamera
+        : !IsScanning && Photos.Count == 0 ? LocalizedStrings.Instance.HintNoPhotos
+        : !HasDestination ? LocalizedStrings.Instance.HintChooseDestination
+        : null;
+
+    public bool ShowImportHint => ImportHint is not null;
 
     public MainViewModel(
         IRemovableDeviceService deviceService,
@@ -157,6 +220,9 @@ public partial class MainViewModel : ViewModelBase
 
         _ = historyService.LoadAsync();
         _ = RefreshDevicesCommand.ExecuteAsync(null);
+        devicePollTimer = new DispatcherTimer { Interval = DevicePollInterval };
+        devicePollTimer.Tick += async (_, _) => await RefreshDevicesAsync();
+        devicePollTimer.Start();
         if (CheckForUpdatesAutomatically)
         {
             _ = CheckForUpdatesInBackgroundAsync();
@@ -179,8 +245,26 @@ public partial class MainViewModel : ViewModelBase
     {
     }
 
+    private void RaiseWorkflowStateChanged()
+    {
+        OnPropertyChanged(nameof(HasDevice));
+        OnPropertyChanged(nameof(HasDestination));
+        OnPropertyChanged(nameof(IsSourceStepDone));
+        OnPropertyChanged(nameof(IsDestinationStepDone));
+        OnPropertyChanged(nameof(ShowNoDeviceState));
+        OnPropertyChanged(nameof(ShowScanningState));
+        OnPropertyChanged(nameof(ShowNoPhotosState));
+        OnPropertyChanged(nameof(PhotosCountLabel));
+        OnPropertyChanged(nameof(SourceSummary));
+        OnPropertyChanged(nameof(DestinationPreview));
+        OnPropertyChanged(nameof(ImportButtonLabel));
+        OnPropertyChanged(nameof(ImportHint));
+        OnPropertyChanged(nameof(ShowImportHint));
+    }
+
     private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        RaiseWorkflowStateChanged();
         OnPropertyChanged(nameof(PhotosCountLabel));
         OnPropertyChanged(nameof(DestinationRootPathDisplay));
         OnPropertyChanged(nameof(UpdateBannerText));
@@ -216,11 +300,23 @@ public partial class MainViewModel : ViewModelBase
         PersistSettings();
     }
 
-    partial void OnSelectedOrganizationOptionChanged(FolderOrganizationOption value) => PersistSettings();
+    partial void OnSelectedOrganizationOptionChanged(FolderOrganizationOption value)
+    {
+        OnPropertyChanged(nameof(DestinationPreview));
+        PersistSettings();
+    }
 
-    partial void OnSelectedNamingPresetChanged(NamingPresetOption value) => PersistSettings();
+    partial void OnSelectedNamingPresetChanged(NamingPresetOption value)
+    {
+        OnPropertyChanged(nameof(DestinationPreview));
+        PersistSettings();
+    }
 
-    partial void OnAppendOriginalFileNameChanged(bool value) => PersistSettings();
+    partial void OnAppendOriginalFileNameChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DestinationPreview));
+        PersistSettings();
+    }
 
     partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => PersistSettings();
 
@@ -333,12 +429,59 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task RefreshDevicesAsync()
     {
-        var devices = await deviceService.GetRemovableDevicesAsync();
-        Devices = new ObservableCollection<RemovableDevice>(devices);
+        // The poll timer and the refresh button can overlap; one read at a time is plenty.
+        if (isRefreshingDevices)
+        {
+            return;
+        }
+
+        isRefreshingDevices = true;
+        try
+        {
+            var devices = await deviceService.GetRemovableDevicesAsync();
+            SyncDevices(devices);
+        }
+        catch
+        {
+            // A transient read failure (e.g. a mount disappearing mid-read) just waits for the next poll.
+        }
+        finally
+        {
+            isRefreshingDevices = false;
+        }
+    }
+
+    // Updates the list in place, matched by mount point, so a refresh never drops the current
+    // selection (which would clear and rescan the photo grid). Only an unplugged device is
+    // deselected; with exactly one camera connected and nothing selected, it's picked for you.
+    private void SyncDevices(IReadOnlyList<RemovableDevice> current)
+    {
+        var currentPaths = current.Select(d => d.RootPath).ToHashSet();
+        foreach (var gone in Devices.Where(d => !currentPaths.Contains(d.RootPath)).ToList())
+        {
+            Devices.Remove(gone);
+        }
+
+        var knownPaths = Devices.Select(d => d.RootPath).ToHashSet();
+        foreach (var added in current.Where(d => !knownPaths.Contains(d.RootPath)))
+        {
+            Devices.Add(added);
+        }
+
+        if (SelectedDevice is not null && !currentPaths.Contains(SelectedDevice.RootPath))
+        {
+            SelectedDevice = null;
+        }
+
+        if (SelectedDevice is null && Devices.Count == 1)
+        {
+            SelectedDevice = Devices[0];
+        }
     }
 
     partial void OnSelectedDeviceChanged(RemovableDevice? value)
     {
+        RaiseWorkflowStateChanged();
         _ = ScanSelectedDeviceCommand.ExecuteAsync(null);
     }
 
@@ -347,31 +490,33 @@ public partial class MainViewModel : ViewModelBase
         oldValue.CollectionChanged -= OnPhotosCollectionChanged;
         newValue.CollectionChanged += OnPhotosCollectionChanged;
         ImportCommand.NotifyCanExecuteChanged();
-        OnPropertyChanged(nameof(ShowEmptyState));
-        OnPropertyChanged(nameof(PhotosCountLabel));
+        RaiseWorkflowStateChanged();
     }
 
     private void OnPhotosCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
         ImportCommand.NotifyCanExecuteChanged();
-        OnPropertyChanged(nameof(ShowEmptyState));
-        OnPropertyChanged(nameof(PhotosCountLabel));
+        RaiseWorkflowStateChanged();
     }
 
     partial void OnDestinationRootPathChanged(string? value)
     {
         ImportCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(DestinationRootPathDisplay));
+        OnPropertyChanged(nameof(DestinationFolderName));
+        RaiseWorkflowStateChanged();
         PersistSettings();
     }
 
     partial void OnIsImportingChanged(bool value)
     {
+        OnPropertyChanged(nameof(ImportHint));
+        OnPropertyChanged(nameof(ShowImportHint));
         ImportCommand.NotifyCanExecuteChanged();
         InstallUpdateCommand.NotifyCanExecuteChanged();
     }
 
-    partial void OnIsScanningChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));
+    partial void OnIsScanningChanged(bool value) => RaiseWorkflowStateChanged();
 
     [RelayCommand]
     private async Task ScanSelectedDeviceAsync()
@@ -389,13 +534,14 @@ public partial class MainViewModel : ViewModelBase
         scanCts = cts;
 
         IsScanning = true;
-        StatusMessage = LocalizedStrings.Instance.ScanningStatus;
+        // Scan progress/results are shown by the Camera step itself (SourceSummary); the footer
+        // status line is reserved for the import.
+        StatusMessage = null;
         try
         {
             var candidates = await scannerService.ScanAsync(SelectedDevice.RootPath, cts.Token);
             var itemViewModels = candidates.Select(c => new PhotoItemViewModel(c)).ToList();
             Photos = new ObservableCollection<PhotoItemViewModel>(itemViewModels);
-            StatusMessage = LocalizedStrings.Instance.PhotosFound(Photos.Count);
 
             await PopulateThumbnailsAndExifAsync(itemViewModels, cts.Token);
         }
@@ -447,6 +593,18 @@ public partial class MainViewModel : ViewModelBase
         await Task.WhenAll(tasks);
     }
 
+    private ImportSettings BuildImportSettings(string destinationRootPath) => new()
+    {
+        DestinationRootPath = destinationRootPath,
+        OrganizationScheme = SelectedOrganizationOption.Value,
+        NamingPreset = SelectedNamingPreset.Value,
+        AppendOriginalFileName = AppendOriginalFileName,
+        DeleteSourceAfterImport = DeleteSourceAfterImport,
+    };
+
+    [RelayCommand]
+    private void CloseDetails() => SelectedPhoto = null;
+
     private bool CanImport() =>
         Photos.Count > 0 && !string.IsNullOrWhiteSpace(DestinationRootPath) && !IsImporting && !IsInstallingUpdate;
 
@@ -458,14 +616,7 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        var settings = new ImportSettings
-        {
-            DestinationRootPath = DestinationRootPath,
-            OrganizationScheme = SelectedOrganizationOption.Value,
-            NamingPreset = SelectedNamingPreset.Value,
-            AppendOriginalFileName = AppendOriginalFileName,
-            DeleteSourceAfterImport = DeleteSourceAfterImport,
-        };
+        var settings = BuildImportSettings(DestinationRootPath);
 
         IsImporting = true;
         ImportProgressCurrent = 0;

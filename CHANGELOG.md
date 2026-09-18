@@ -9,6 +9,24 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Changed
+
+- Redesigned the main window around the import workflow: three numbered steps
+  (Camera → Destination → After import) that check off as they're completed, with the
+  Import button pinned at the bottom. Language, updates and version moved into a
+  Settings popover in the app bar.
+- The Import button says how many photos it will import, and explains why when it's
+  disabled.
+- Live example of the final file path under the folder/naming options.
+- Separate empty states for "no camera", "looking for photos" and "no photos found".
+- Photo details show a larger preview and a close button; the raw EXIF tag list is
+  collapsed by default.
+
+### Added
+
+- Cameras are detected automatically when plugged in (no need to press refresh), and a
+  single connected camera is selected for you.
+
 ## [0.2.2] - 2026-09-18
 
 ### Fixed

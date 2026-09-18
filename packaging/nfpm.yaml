@@ -15,7 +15,7 @@ section: graphics
 priority: optional
 maintainer: "Richardson Calegari Saconi <https://github.com/RickCaleg>"
 vendor: "Richardson Calegari Saconi"
-homepage: "https://github.com/RickCaleg/chamera-importer"
+homepage: "https://github.com/RickCaleg/charmera-importer"
 license: MIT
 description: |
   USB photo importer for Kodak cameras.
@@ -36,6 +36,14 @@ contents:
       mode: 0644
   - src: charmera-importer/Assets/charmera-icon.png
     dst: /usr/share/icons/hicolor/256x256/apps/charmera-importer.png
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/doc/charmera-importer/copyright
+    file_info:
+      mode: 0644
+  - src: THIRD-PARTY-NOTICES.md
+    dst: /usr/share/doc/charmera-importer/THIRD-PARTY-NOTICES.md
     file_info:
       mode: 0644
   - src: /opt/charmera-importer/charmera-importer

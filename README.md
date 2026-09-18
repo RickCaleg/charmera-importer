@@ -3,6 +3,8 @@
 A desktop app for importing photos from a Kodak camera (or any USB mass-storage
 device) with automatic EXIF-based organization and duplicate detection.
 
+[![CI](https://github.com/RickCaleg/charmera-importer/actions/workflows/ci.yml/badge.svg)](https://github.com/RickCaleg/charmera-importer/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/RickCaleg/charmera-importer)](https://github.com/RickCaleg/charmera-importer/releases/latest)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)
@@ -43,9 +45,43 @@ already been imported before, based on file content, not just the filename.
   from the camera. An explicit, always-off-by-default checkbox lets you also
   delete already-imported photos from the camera afterward, for people who
   want to clear the card as they go.
+- **Self-updating** — checks GitHub Releases on startup (can be turned off), shows a
+  banner when a new version is out, and installs it with one click after verifying the
+  download's SHA-256 checksum.
 - **Language selection** — the UI auto-detects a supported language from the
   OS locale on first run (currently English and Portuguese), and remembers
   your choice if you change it from the picker in the header.
+
+## Installation
+
+Download the latest version from the
+**[Releases page](https://github.com/RickCaleg/charmera-importer/releases/latest)**.
+All builds are self-contained — no .NET installation needed.
+
+| Platform | File | Updates |
+|---|---|---|
+| Windows 10/11 (x64) | `charmera-importer-<version>-win-x64-setup.exe` | Automatic, from inside the app |
+| Linux (x64), any distro | `charmera-importer-<version>-linux-x64.tar.gz` | Automatic, from inside the app |
+| Debian / Ubuntu | `charmera-importer_<version>_amd64.deb` | Download the new `.deb` (the app tells you when) |
+| Fedora / openSUSE | `charmera-importer-<version>-1.x86_64.rpm` | Download the new `.rpm` (the app tells you when) |
+
+**Windows:** run the setup. It installs for your user only, so no administrator prompt.
+Windows SmartScreen may warn that the publisher is unknown, because the installer isn't
+code-signed. Choose *More info → Run anyway*.
+
+**Linux (portable):** extract it somewhere you own, such as `~/Applications/charmera-importer`,
+and run `./charmera-importer`. The folder must stay writable by you for self-update to
+work. The tarball also contains a `.desktop` file and icon if you want a menu entry.
+
+**Linux (.deb/.rpm):**
+
+```bash
+sudo apt install ./charmera-importer_<version>_amd64.deb     # Debian/Ubuntu
+sudo dnf install ./charmera-importer-<version>-1.x86_64.rpm  # Fedora
+```
+
+You can verify any download against `SHA256SUMS` from the same release
+(`sha256sum -c SHA256SUMS --ignore-missing`).
 
 ## Tech stack
 
@@ -61,13 +97,17 @@ already been imported before, based on file content, not just the filename.
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Linux or Windows (see [Platform support](#platform-support))
 
-### Build and run
+### Build, test, and run
 
 ```bash
-git clone https://github.com/RickCaleg/chamera-importer.git
-cd chamera-importer
+git clone https://github.com/RickCaleg/charmera-importer.git
+cd charmera-importer
+dotnet test charmera-importer.slnx
 dotnet run --project charmera-importer/charmera-importer.csproj
 ```
+
+Development builds never replace themselves. The update banner only links to the release
+page. See [packaging/README.md](packaging/README.md) for how releases are built.
 
 ## Usage
 
@@ -86,7 +126,7 @@ dotnet run --project charmera-importer/charmera-importer.csproj
 | Platform | Status |
 |---|---|
 | Linux | Fully tested, including with a real Kodak camera |
-| Windows | Implemented (`DriveInfo`-based device detection + native folder picker), not yet tested on real Windows hardware |
+| Windows | Implemented (`DriveInfo`-based device detection + native folder picker), built and unit-tested in CI; not yet tested by hand on real Windows hardware |
 
 Device detection on Linux works by reading `/proc/mounts` and `/sys/block/*/removable`
 to find removable volumes mounted under `/media` or `/run/media` — the standard
@@ -100,8 +140,8 @@ layout on most Linux desktops.
   doesn't have data for, rather than showing them blank.
 - Thumbnails aren't generated for RAW formats (`.cr2`, `.nef`, `.arw`, `.dng`) —
   EXIF is still read for these, just no preview image.
-- No automated test suite yet; the app has been manually verified end-to-end
-  (see commit history / PR descriptions for details on what was tested).
+- Automated tests cover the pure logic (path/naming rules, update version and checksum
+  handling), not the UI or device detection. Those are still verified by hand.
 - Only English and Portuguese are translated so far — see `Localization/Translations.cs`
   to add another language (it's just a dictionary of strings per language code).
 
@@ -115,6 +155,9 @@ charmera-importer/
 ├── Views/          # Avalonia XAML views
 ├── Styles/         # Shared visual theme (colors, control styles)
 └── Localization/   # Language detection/persistence and the {loc:Loc Key} XAML markup extension
+tests/              # xUnit tests
+packaging/          # nfpm (.deb/.rpm) config, Inno Setup script, .desktop file
+.github/workflows/  # CI (build + test) and release (build + publish all installers)
 ```
 
 ## AI disclosure

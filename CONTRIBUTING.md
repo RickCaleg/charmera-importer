@@ -24,9 +24,19 @@ Open a [GitHub issue](../../issues) with:
    - No new NuGet dependency without a good reason — this project deliberately
      avoids native dependencies (no SQLite, no platform-specific USB libraries)
      where a simpler approach works.
-3. Build and run locally (`dotnet build`, `dotnet run --project charmera-importer/charmera-importer.csproj`)
-   and manually verify the change — there's no automated test suite yet.
-4. Open a pull request describing what changed and why, and how you tested it.
+3. Run the tests (`dotnet test charmera-importer.slnx`), and add tests for new pure logic
+   (path rules, parsing, and similar). Then run the app
+   (`dotnet run --project charmera-importer/charmera-importer.csproj`) and verify the change
+   by hand, since UI and device detection aren't covered by automated tests.
+4. Add a line under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for anything users
+   will notice.
+5. Open a pull request describing what changed and why, and how you tested it. CI builds
+   and tests on both Linux and Windows.
+
+By contributing, you agree that your contributions are licensed under the project's
+[MIT license](LICENSE). Please also follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Report security issues privately as described in [SECURITY.md](SECURITY.md), not in a
+public issue.
 
 ## Development notes
 
@@ -38,3 +48,5 @@ Open a [GitHub issue](../../issues) with:
 - This project uses AI-assisted development (see the README's "AI disclosure"
   section) — that's fine to continue doing in contributions too, just make
   sure you've actually run and verified whatever you're submitting.
+- Releases are fully automated: pushing a `v*` tag builds every installer and publishes
+  the GitHub Release. See [packaging/README.md](packaging/README.md).

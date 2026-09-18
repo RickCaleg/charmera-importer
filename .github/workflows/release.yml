@@ -1,0 +1,124 @@
+# Builds every release asset and publishes the GitHub Release when a v* tag is pushed:
+#
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# The asset names below are what the in-app updater looks for (see
+# charmera-importer/Services/ReleaseMetadata.cs) — rename them in both places or not at all.
+# SHA256SUMS is mandatory: the updater refuses to install anything not listed in it.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test charmera-importer.slnx -c Release
+
+  linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Resolve version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Publish self-contained binary
+        run: |
+          dotnet publish charmera-importer/charmera-importer.csproj -c Release -r linux-x64 \
+            --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:Version="$VERSION" -o publish/linux
+      - name: Portable tarball
+        run: |
+          mkdir -p dist staging
+          cp publish/linux/charmera-importer LICENSE THIRD-PARTY-NOTICES.md staging/
+          cp packaging/linux/charmera-importer.desktop staging/
+          cp charmera-importer/Assets/charmera-icon.png staging/charmera-importer.png
+          tar -czf "dist/charmera-importer-$VERSION-linux-x64.tar.gz" -C staging .
+      - name: Install nfpm
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update -q
+          sudo apt-get install -y -q nfpm
+      - name: .deb and .rpm
+        run: |
+          LINUX_BINARY=publish/linux/charmera-importer envsubst < packaging/nfpm.yaml > nfpm.resolved.yaml
+          nfpm package --config nfpm.resolved.yaml --packager deb --target "dist/charmera-importer_${VERSION}_amd64.deb"
+          nfpm package --config nfpm.resolved.yaml --packager rpm --target "dist/charmera-importer-${VERSION}-1.x86_64.rpm"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*
+          if-no-files-found: error
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Resolve version from tag
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Publish self-contained binary
+        run: >
+          dotnet publish charmera-importer/charmera-importer.csproj -c Release -r win-x64
+          --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ env.VERSION }} -o publish/windows
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc "/DAppVersion=$env:VERSION" "/DSourceExe=$PWD\publish\windows\charmera-importer.exe" `
+            "/DOutputDir=$PWD\dist" packaging\windows\charmera-importer.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
+      - name: Release notes from CHANGELOG.md
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "[" v "]")) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "No CHANGELOG.md entry for $VERSION" >&2; exit 1; fi
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Charmera Importer ${GITHUB_REF_NAME#v}" --notes-file notes.md

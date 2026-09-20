@@ -9,6 +9,8 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-19
+
 ### Added
 
 - **Pick your Charmera, and the app wears its colors.** A new *Your Charmera* picker at the top

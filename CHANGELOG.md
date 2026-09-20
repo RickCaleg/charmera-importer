@@ -9,6 +9,8 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-09-19
+
 ### Fixed
 
 - **UI size on fractionally scaled Hyprland monitors** (Linux). Under Hyprland with

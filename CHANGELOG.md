@@ -9,6 +9,15 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Fixed
+
+- **UI size on fractionally scaled Hyprland monitors** (Linux). Under Hyprland with
+  `xwayland { force_zero_scaling = true }` (the Omarchy default) the app ran unscaled through
+  XWayland, so it looked too small on a monitor scaled to, say, 1.6. It now follows the focused
+  monitor's scale as reported by `hyprctl`. Nothing changes on Windows, other compositors, or
+  when `AVALONIA_GLOBAL_SCALE_FACTOR` / `AVALONIA_SCREEN_SCALE_FACTORS` / `QT_SCALE_FACTOR` /
+  `QT_SCREEN_SCALE_FACTORS` is set.
+
 ## [0.5.1] - 2026-09-18
 
 ### Added

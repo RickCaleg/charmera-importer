@@ -9,6 +9,16 @@ internal static class Translations
 {
     private static readonly Dictionary<string, string> Portuguese = new()
     {
+        ["Camera_PickerLabel"] = "Sua Charmera",
+        ["Camera_PickerHint"] = "Escolha a cor da sua câmera e o app veste as cores dela.",
+        ["Camera_Yellow"] = "Amarela clássica",
+        ["Camera_Red"] = "Vermelha",
+        ["Camera_Gray"] = "Cinza",
+        ["Camera_Geometric"] = "Branca geométrica",
+        ["Camera_Prism"] = "Preta arco-íris",
+        ["Camera_Blue"] = "Azul",
+        ["Camera_Transparent"] = "Transparente (secreta)",
+
         ["Header_DevicePlaceholder"] = "Selecione a Charmera",
         ["Header_RefreshTooltip"] = "Atualizar lista de dispositivos",
 
@@ -132,6 +142,16 @@ internal static class Translations
 
     private static readonly Dictionary<string, string> English = new()
     {
+        ["Camera_PickerLabel"] = "Your Charmera",
+        ["Camera_PickerHint"] = "Pick your camera's color and the app wears it.",
+        ["Camera_Yellow"] = "Classic yellow",
+        ["Camera_Red"] = "Red",
+        ["Camera_Gray"] = "Gray",
+        ["Camera_Geometric"] = "Geometric white",
+        ["Camera_Prism"] = "Black rainbow",
+        ["Camera_Blue"] = "Blue",
+        ["Camera_Transparent"] = "Transparent (secret)",
+
         ["Header_DevicePlaceholder"] = "Select your Charmera",
         ["Header_RefreshTooltip"] = "Refresh device list",
 

@@ -1,0 +1,209 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="charmera_importer.Controls.CameraIllustration"
+             IsHitTestVisible="False">
+
+    <!--
+      Front view of the Charmera, drawn as vectors on a 260 x 124 canvas so it stays sharp at any
+      size and display scale. Shared hardware (body, buttons, viewfinder, lens) is drawn once and
+      colored in code-behind from the variant; each colorway has its own label artwork layer,
+      shown by Id. The art is an original illustration of the camera's looks, not a photograph.
+    -->
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="260" Height="124">
+
+            <!-- Key ring, half hidden behind the body -->
+            <Ellipse Canvas.Left="1" Canvas.Top="36" Width="24" Height="32" Stroke="#B4B9C2" StrokeThickness="3" />
+
+            <!-- Top face with shutter and small button -->
+            <Border x:Name="TopFace" Canvas.Left="24" Canvas.Top="3" Width="230" Height="30" CornerRadius="9" />
+            <Ellipse x:Name="Shutter" Canvas.Left="70" Canvas.Top="5" Width="30" Height="10" Fill="#2A2A2E" />
+            <Ellipse Canvas.Left="76" Canvas.Top="6" Width="18" Height="4" Fill="#FFFFFF" Opacity="0.14" />
+            <Ellipse x:Name="SmallButton" Canvas.Left="116" Canvas.Top="6" Width="18" Height="8" Fill="#2A2A2E" />
+            <Ellipse Canvas.Left="108" Canvas.Top="9" Width="3" Height="3" Fill="#000000" Opacity="0.55" />
+
+            <!-- Front face -->
+            <Border x:Name="Front" Canvas.Left="18" Canvas.Top="16" Width="240" Height="104" CornerRadius="12"
+                    BorderThickness="1" />
+
+            <!-- Flash slit and viewfinder -->
+            <Border x:Name="Slit" Canvas.Left="32" Canvas.Top="34" Width="28" Height="7" CornerRadius="3.5" />
+            <Ellipse x:Name="Led" Canvas.Left="34" Canvas.Top="35.5" Width="10" Height="4" Fill="#D4E836" IsVisible="False" />
+            <Border Canvas.Left="216" Canvas.Top="30" Width="30" Height="24" CornerRadius="3" Background="#17171B" />
+            <Border Canvas.Left="218" Canvas.Top="32" Width="26" Height="20" CornerRadius="2">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#323B4D" />
+                        <GradientStop Offset="1" Color="#0E0F12" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+            <Path Fill="#FFFFFF" Opacity="0.16" Data="M220,33 L232,33 L224,51 L220,51 Z" />
+
+            <!-- Label artwork, one layer per colorway -->
+
+            <!-- 1987 yellow: retro sunset stripes that end in an arrow -->
+            <Canvas x:Name="ArtYellow" IsVisible="False" Width="260" Height="124">
+                <Canvas Width="260" Height="124" Clip="M58,64 L258,64 L258,104 L58,104 L46,84 Z">
+                    <Rectangle Canvas.Left="46" Canvas.Top="64" Width="212" Height="8" Fill="#141416" />
+                    <Rectangle Canvas.Left="46" Canvas.Top="72" Width="212" Height="6" Fill="#2A2C86" />
+                    <Rectangle Canvas.Left="46" Canvas.Top="78" Width="212" Height="6" Fill="#4B2E93" />
+                    <Rectangle Canvas.Left="46" Canvas.Top="84" Width="212" Height="7" Fill="#D62828" />
+                    <Rectangle Canvas.Left="46" Canvas.Top="91" Width="212" Height="7" Fill="#F26B1D" />
+                    <Rectangle Canvas.Left="46" Canvas.Top="98" Width="212" Height="6" Fill="#F9A11B" />
+                </Canvas>
+                <TextBlock Canvas.Left="70" Canvas.Top="31" Text="Charmera" FontSize="14" FontStyle="Italic"
+                           FontWeight="SemiBold" Foreground="#1A1A1E" />
+                <TextBlock Canvas.Left="186" Canvas.Top="66" Text="1987" FontSize="24" FontWeight="ExtraBold"
+                           Foreground="White" />
+            </Canvas>
+
+            <!-- Red: a stack of white lines and a big wordmark the lens sits on -->
+            <Canvas x:Name="ArtRed" IsVisible="False" Width="260" Height="124">
+                <Rectangle Canvas.Left="30" Canvas.Top="60" Width="26" Height="2.4" Fill="White" />
+                <Rectangle Canvas.Left="30" Canvas.Top="66" Width="26" Height="2.4" Fill="White" />
+                <Rectangle Canvas.Left="30" Canvas.Top="72" Width="26" Height="2.4" Fill="White" />
+                <Rectangle Canvas.Left="30" Canvas.Top="78" Width="26" Height="2.4" Fill="White" />
+                <Rectangle Canvas.Left="30" Canvas.Top="84" Width="26" Height="2.4" Fill="White" />
+                <Rectangle Canvas.Left="30" Canvas.Top="90" Width="26" Height="2.4" Fill="White" />
+                <TextBlock Canvas.Left="62" Canvas.Top="60" Text="Char" FontSize="26" FontWeight="ExtraBold"
+                           LetterSpacing="-0.5" Foreground="White" />
+                <TextBlock Canvas.Left="176" Canvas.Top="60" Text="mera" FontSize="26" FontWeight="ExtraBold"
+                           LetterSpacing="-0.5" Foreground="White" />
+            </Canvas>
+
+            <!-- Gray: six rainbow stripes across the front -->
+            <Canvas x:Name="ArtGray" IsVisible="False" Width="260" Height="124">
+                <Rectangle Canvas.Left="18" Canvas.Top="64" Width="240" Height="6" Fill="#2E2A86" />
+                <Rectangle Canvas.Left="18" Canvas.Top="70" Width="240" Height="6" Fill="#D6246E" />
+                <Rectangle Canvas.Left="18" Canvas.Top="76" Width="240" Height="6" Fill="#E8362E" />
+                <Rectangle Canvas.Left="18" Canvas.Top="82" Width="240" Height="6" Fill="#F57F17" />
+                <Rectangle Canvas.Left="18" Canvas.Top="88" Width="240" Height="6" Fill="#FDB515" />
+                <Rectangle Canvas.Left="18" Canvas.Top="94" Width="240" Height="6" Fill="#1A1A1A" />
+                <TextBlock Canvas.Left="70" Canvas.Top="31" Text="Charmera" FontSize="14" FontStyle="Italic"
+                           FontWeight="SemiBold" Foreground="#E32B2B" />
+            </Canvas>
+
+            <!-- Geometric: Bauhaus blocks in red, blue and yellow on cream -->
+            <Canvas x:Name="ArtGeometric" IsVisible="False" Width="260" Height="124">
+                <Rectangle Canvas.Left="30" Canvas.Top="58" Width="30" Height="30" Fill="#D62828" />
+                <Ellipse Canvas.Left="39" Canvas.Top="67" Width="12" Height="12" Fill="#FDB515" />
+                <Path Canvas.Left="33" Canvas.Top="61" Width="24" Height="24" Stroke="#FDB515" StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      Data="M12,1 L12,4 M12,20 L12,23 M1,12 L4,12 M20,12 L23,12 M4.2,4.2 L6.3,6.3 M17.7,17.7 L19.8,19.8 M19.8,4.2 L17.7,6.3 M6.3,17.7 L4.2,19.8" />
+                <Rectangle Canvas.Left="60" Canvas.Top="58" Width="30" Height="30" Fill="#2B4BA2" />
+                <Rectangle Canvas.Left="30" Canvas.Top="88" Width="60" Height="24" Fill="#FDB515" />
+                <Rectangle Canvas.Left="188" Canvas.Top="60" Width="46" Height="20" Fill="#FDB515" />
+                <Path Data="M100,86 L112,86 L106,74 Z" Fill="#FDB515" />
+                <Ellipse Canvas.Left="102" Canvas.Top="92" Width="18" Height="18" Fill="#2B4BA2" />
+                <Ellipse Canvas.Left="90" Canvas.Top="94" Width="10" Height="10" Fill="#2B4BA2" />
+                <Ellipse Canvas.Left="198" Canvas.Top="84" Width="26" Height="26" Fill="#D62828" />
+                <Rectangle Canvas.Left="205" Canvas.Top="91" Width="12" Height="2" Fill="White" />
+                <Rectangle Canvas.Left="205" Canvas.Top="96" Width="12" Height="2" Fill="White" />
+                <Rectangle Canvas.Left="205" Canvas.Top="101" Width="12" Height="2" Fill="White" />
+                <TextBlock Canvas.Left="70" Canvas.Top="31" Text="Charmera" FontSize="14" FontStyle="Italic"
+                           FontWeight="SemiBold" Foreground="#1A1A1E" />
+            </Canvas>
+
+            <!-- Prism: black body, a soft glow around the lens and a rainbow beam -->
+            <Canvas x:Name="ArtPrism" IsVisible="False" Width="260" Height="124">
+                <Canvas Canvas.Left="100" Canvas.Top="58" Width="148" Height="54" Clip="M0,0 L148,0 L148,54 L0,54 Z">
+                    <Ellipse Canvas.Left="6" Canvas.Top="-2" Width="58" Height="58">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Offset="0" Color="#C8A0BC" />
+                                <GradientStop Offset="0.7" Color="#60465C" />
+                                <GradientStop Offset="1" Color="#1D1D20" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    <Path Fill="#E5262B" Data="M74,0 L88,0 L58,54 L44,54 Z" />
+                    <Path Fill="#F58220" Data="M88,0 L102,0 L72,54 L58,54 Z" />
+                    <Path Fill="#FDB913" Data="M102,0 L116,0 L86,54 L72,54 Z" />
+                    <Path Fill="#3DAE49" Data="M116,0 L130,0 L100,54 L86,54 Z" />
+                    <Path Fill="#1FA3D9" Data="M130,0 L144,0 L114,54 L100,54 Z" />
+                    <Path Fill="#2B4BA2" Data="M144,0 L148,0 L148,54 L114,54 Z" />
+                </Canvas>
+                <Path Canvas.Left="106" Canvas.Top="63" Fill="White" Opacity="0.9"
+                      Data="M7,0 C7.6,4.8 9.2,6.4 14,7 C9.2,7.6 7.6,9.2 7,14 C6.4,9.2 4.8,7.6 0,7 C4.8,6.4 6.4,4.8 7,0 Z" />
+                <Path Canvas.Left="118" Canvas.Top="96" Fill="White" Opacity="0.75" Width="10" Height="10" Stretch="Fill"
+                      Data="M7,0 C7.6,4.8 9.2,6.4 14,7 C9.2,7.6 7.6,9.2 7,14 C6.4,9.2 4.8,7.6 0,7 C4.8,6.4 6.4,4.8 7,0 Z" />
+                <Ellipse Canvas.Left="34" Canvas.Top="66" Width="2" Height="2" Fill="White" Opacity="0.55" />
+                <Ellipse Canvas.Left="50" Canvas.Top="88" Width="1.6" Height="1.6" Fill="White" Opacity="0.45" />
+                <Ellipse Canvas.Left="40" Canvas.Top="102" Width="2" Height="2" Fill="White" Opacity="0.5" />
+                <Ellipse Canvas.Left="72" Canvas.Top="76" Width="1.6" Height="1.6" Fill="White" Opacity="0.4" />
+                <TextBlock Canvas.Left="70" Canvas.Top="31" Text="Charmera" FontSize="14" FontStyle="Italic"
+                           FontWeight="SemiBold" Foreground="#E5262B" />
+            </Canvas>
+
+            <!-- Blue: white pinstripes, a navy and a cyan band, yellow lettering -->
+            <Canvas x:Name="ArtBlue" IsVisible="False" Width="260" Height="124">
+                <Rectangle Canvas.Left="18" Canvas.Top="60" Width="240" Height="2.6" Fill="White" />
+                <Rectangle Canvas.Left="18" Canvas.Top="62.6" Width="240" Height="17.4" Fill="#1B2F80" />
+                <Rectangle Canvas.Left="18" Canvas.Top="80" Width="240" Height="26" Fill="#2BB7D8" />
+                <Rectangle Canvas.Left="18" Canvas.Top="106" Width="240" Height="2.6" Fill="White" />
+                <TextBlock Canvas.Left="32" Canvas.Top="62" Text="Charmera" FontSize="15" FontWeight="ExtraBold"
+                           Foreground="#F2E830" />
+                <Rectangle Canvas.Left="32" Canvas.Top="88" Width="70" Height="1.6" Fill="White" Opacity="0.55" />
+                <Rectangle Canvas.Left="32" Canvas.Top="94" Width="56" Height="1.6" Fill="White" Opacity="0.55" />
+                <Rectangle Canvas.Left="32" Canvas.Top="100" Width="42" Height="1.6" Fill="White" Opacity="0.55" />
+                <TextBlock Canvas.Left="196" Canvas.Top="82" Text="1987" FontSize="18" FontWeight="ExtraBold"
+                           Foreground="#F2E830" />
+            </Canvas>
+
+            <!-- Transparent (secret): circuit board and silver plate seen through the shell -->
+            <Canvas x:Name="ArtTransparent" IsVisible="False" Width="260" Height="124">
+                <Border Canvas.Left="28" Canvas.Top="60" Width="94" Height="50" CornerRadius="3" Background="#5DA86E"
+                        Opacity="0.85" />
+                <Border Canvas.Left="176" Canvas.Top="62" Width="72" Height="46" CornerRadius="3" Background="#5DA86E"
+                        Opacity="0.7" />
+                <Path Stroke="#2F6E42" StrokeThickness="1" Opacity="0.7"
+                      Data="M34,100 L60,100 L60,92 L90,92 M34,68 L48,68 L48,78 M96,66 L96,84 L116,84 M182,72 L200,72 L200,96 L240,96" />
+                <Border Canvas.Left="40" Canvas.Top="74" Width="18" Height="12" CornerRadius="1.5" Background="#26292D" />
+                <Border Canvas.Left="64" Canvas.Top="94" Width="14" Height="10" CornerRadius="1.5" Background="#26292D" />
+                <Border Canvas.Left="210" Canvas.Top="76" Width="16" Height="12" CornerRadius="1.5" Background="#26292D" />
+                <Border Canvas.Left="116" Canvas.Top="62" Width="70" Height="48" CornerRadius="5">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                            <GradientStop Offset="0" Color="#E4E7EB" />
+                            <GradientStop Offset="1" Color="#9BA1A9" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Ellipse Canvas.Left="120" Canvas.Top="83" Width="6" Height="6" Fill="#7D838B" />
+                <Ellipse Canvas.Left="176" Canvas.Top="83" Width="6" Height="6" Fill="#7D838B" />
+                <TextBlock Canvas.Left="70" Canvas.Top="31" Text="Charmera" FontSize="14" FontStyle="Italic"
+                           FontWeight="SemiBold" Foreground="#D9232A" />
+            </Canvas>
+
+            <!-- Lens -->
+            <Ellipse Canvas.Left="127" Canvas.Top="65" Width="46" Height="46" Fill="#000000" Opacity="0.22" />
+            <Ellipse Canvas.Left="127" Canvas.Top="63" Width="46" Height="46" Fill="#1A1A1D" Stroke="#34343A"
+                     StrokeThickness="1.5" />
+            <Ellipse Canvas.Left="133" Canvas.Top="69" Width="34" Height="34" Fill="#0E0E11" Stroke="#26262B"
+                     StrokeThickness="1" />
+            <Ellipse Canvas.Left="139" Canvas.Top="75" Width="22" Height="22">
+                <Ellipse.Fill>
+                    <RadialGradientBrush GradientOrigin="35%,30%">
+                        <GradientStop Offset="0" Color="#4C5C7B" />
+                        <GradientStop Offset="0.55" Color="#161A24" />
+                        <GradientStop Offset="1" Color="#07080B" />
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse Canvas.Left="143" Canvas.Top="79" Width="7" Height="4.5" Fill="White" Opacity="0.55" />
+            <Ellipse Canvas.Left="153" Canvas.Top="88" Width="3" Height="3" Fill="White" Opacity="0.25" />
+
+            <!-- Soft plastic sheen over the front face -->
+            <Border Canvas.Left="18" Canvas.Top="16" Width="240" Height="104" CornerRadius="12" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                        <GradientStop Offset="0" Color="#26FFFFFF" />
+                        <GradientStop Offset="0.35" Color="#00FFFFFF" />
+                        <GradientStop Offset="1" Color="#1A000000" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+        </Canvas>
+    </Viewbox>
+</UserControl>

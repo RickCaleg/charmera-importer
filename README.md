@@ -239,8 +239,11 @@ already been imported before, based on file content, not just the filename.
 - **Duplicate detection** — every imported file is hashed (SHA-256) and
   recorded in a local history, so re-running an import (e.g. with an
   unformatted card) never creates duplicate copies.
+- **Your camera's colors** — pick which of the seven Charmera designs is yours (yellow, red,
+  gray, geometric white, black rainbow, blue, or the transparent secret edition) and the app
+  takes on its colors, stripes and a vector portrait of the camera.
 - **Remembers your preferences** — destination folder, organization scheme,
-  naming preset, and language are saved automatically and pre-selected the
+  naming preset, language, and your camera are saved automatically and pre-selected the
   next time you open the app.
 - **Copies by default, deletes only if you ask** — files are always copied
   from the camera. An explicit, always-off-by-default checkbox lets you also
@@ -333,7 +336,9 @@ page. See [packaging/README.md](packaging/README.md) for how releases are built.
 
 ## Usage
 
-The left panel walks through the import in three steps:
+At the top of the left panel, *Your Charmera* lets you pick your camera's color; the app
+adopts it as its theme (optional, and it doesn't affect the import). Below it, the panel walks
+through the import in three steps:
 
 1. **Camera** — plug the Charmera in. It's recognized and selected automatically, and its
    photos and videos appear as thumbnails (videos show their duration). Click one to see
@@ -379,13 +384,14 @@ layout on most Linux desktops.
 
 ```
 charmera-importer/
-├── Models/         # Plain data types (RemovableDevice, PhotoImportCandidate, ImportSettings, ...)
+├── Models/         # Plain data types (RemovableDevice, PhotoImportCandidate, CameraVariant, ThemePalette, ...)
 ├── Services/       # Device detection, scanning, EXIF, thumbnails, hashing, import pipeline
 ├── ViewModels/     # MVVM view models (CommunityToolkit.Mvvm)
 ├── Views/          # Avalonia XAML views
+├── Controls/       # Custom controls (the vector CameraIllustration, the StripeBar)
 ├── Styles/         # Shared visual theme (colors, control styles)
 └── Localization/   # Language detection/persistence and the {loc:Loc Key} XAML markup extension
-tests/              # xUnit tests
+tests/              # xUnit tests (charmera-importer.UiTests drives the real windows headless)
 packaging/          # nfpm (.deb/.rpm) config, Inno Setup script, .desktop file
 .github/workflows/  # CI (build + test) and release (build + publish all installers)
 ```

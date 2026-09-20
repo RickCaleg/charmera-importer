@@ -1,15 +1,18 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <!-- Kodak-inspired brand palette: bold red as the primary accent, near-black header,
-       clean light surfaces. Values are the single source of truth for status colors —
+  <!-- Default ("Classic") palette: Kodak red accent, near-black header, clean light surfaces. Once the
+       user picks their camera, Services/AppTheme.cs replaces the themed brushes (Accent*, OnAccent,
+       Header*, OnHeader*, SurfaceApp, Tint*) at runtime; they are referenced with DynamicResource.
+       Status colors are fixed on purpose —
        Converters/ImportStatusToBrushConverter.cs mirrors StatusImported/Duplicate/Error/Pending. -->
   <Styles.Resources>
     <ResourceDictionary>
-      <Color x:Key="KodakRedColor">#ED1C24</Color>
-      <Color x:Key="KodakRedHoverColor">#D4151C</Color>
-      <Color x:Key="KodakRedPressedColor">#B01015</Color>
+      <Color x:Key="AccentColor">#ED1C24</Color>
+      <Color x:Key="AccentHoverColor">#D4151C</Color>
+      <Color x:Key="AccentPressedColor">#B01015</Color>
       <Color x:Key="KodakYellowColor">#FFC72C</Color>
+      <Color x:Key="DangerColor">#DC2626</Color>
 
       <Color x:Key="InkPrimaryColor">#1A1A1E</Color>
       <Color x:Key="InkSecondaryColor">#6B7280</Color>
@@ -17,15 +20,16 @@
 
       <Color x:Key="SurfaceAppColor">#F3F3F5</Color>
       <Color x:Key="SurfaceCardColor">#FFFFFF</Color>
-      <Color x:Key="SurfaceHeaderColor">#17181B</Color>
+      <Color x:Key="HeaderColor">#17181B</Color>
 
       <Color x:Key="BorderSubtleColor">#E4E4E7</Color>
       <Color x:Key="BorderStrongColor">#D4D4D8</Color>
 
-      <SolidColorBrush x:Key="KodakRedBrush" Color="{StaticResource KodakRedColor}" />
-      <SolidColorBrush x:Key="KodakRedHoverBrush" Color="{StaticResource KodakRedHoverColor}" />
-      <SolidColorBrush x:Key="KodakRedPressedBrush" Color="{StaticResource KodakRedPressedColor}" />
+      <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
+      <SolidColorBrush x:Key="AccentPressedBrush" Color="{StaticResource AccentPressedColor}" />
       <SolidColorBrush x:Key="KodakYellowBrush" Color="{StaticResource KodakYellowColor}" />
+      <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
 
       <SolidColorBrush x:Key="InkPrimaryBrush" Color="{StaticResource InkPrimaryColor}" />
       <SolidColorBrush x:Key="InkSecondaryBrush" Color="{StaticResource InkSecondaryColor}" />
@@ -33,7 +37,15 @@
 
       <SolidColorBrush x:Key="SurfaceAppBrush" Color="{StaticResource SurfaceAppColor}" />
       <SolidColorBrush x:Key="SurfaceCardBrush" Color="{StaticResource SurfaceCardColor}" />
-      <SolidColorBrush x:Key="SurfaceHeaderBrush" Color="{StaticResource SurfaceHeaderColor}" />
+      <SolidColorBrush x:Key="HeaderBrush" Color="{StaticResource HeaderColor}" />
+      <SolidColorBrush x:Key="OnAccentBrush" Color="White" />
+      <SolidColorBrush x:Key="AccentInkBrush" Color="{StaticResource AccentColor}" />
+      <SolidColorBrush x:Key="OnHeaderBrush" Color="White" />
+      <SolidColorBrush x:Key="OnHeaderMutedBrush" Color="#9A9AA2" />
+      <SolidColorBrush x:Key="HeaderHoverBrush" Color="#22FFFFFF" />
+      <SolidColorBrush x:Key="HeaderPressedBrush" Color="#33FFFFFF" />
+      <SolidColorBrush x:Key="TintBrush" Color="#FFF4D6" />
+      <SolidColorBrush x:Key="TintBorderBrush" Color="#F5D98B" />
 
       <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}" />
       <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
@@ -42,8 +54,8 @@
 
   <!-- Primary CTA button (Import) -->
   <Style Selector="Button.primary">
-    <Setter Property="Background" Value="{StaticResource KodakRedBrush}" />
-    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="FontSize" Value="15" />
     <Setter Property="Padding" Value="20,15" />
@@ -53,10 +65,10 @@
     <Setter Property="Cursor" Value="Hand" />
   </Style>
   <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{StaticResource KodakRedHoverBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
   </Style>
   <Style Selector="Button.primary:pressed /template/ ContentPresenter">
-    <Setter Property="Background" Value="{StaticResource KodakRedPressedBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}" />
   </Style>
   <Style Selector="Button.primary:disabled /template/ ContentPresenter">
     <Setter Property="Background" Value="{StaticResource BorderStrongBrush}" />
@@ -76,7 +88,7 @@
     <Setter Property="Cursor" Value="Hand" />
   </Style>
   <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{StaticResource SurfaceAppBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceAppBrush}" />
   </Style>
 
   <!-- Small square icon button (refresh) -->
@@ -141,10 +153,10 @@
     <Setter Property="Cursor" Value="Hand" />
   </Style>
   <Style Selector="Button.appBarIcon:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="#22FFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource HeaderHoverBrush}" />
   </Style>
   <Style Selector="Button.appBarIcon:pressed /template/ ContentPresenter">
-    <Setter Property="Background" Value="#33FFFFFF" />
+    <Setter Property="Background" Value="{DynamicResource HeaderPressedBrush}" />
   </Style>
 
   <!-- Icon-only button on light surfaces (refresh devices, close details) -->
@@ -166,7 +178,7 @@
     <Setter Property="CornerRadius" Value="8" />
   </Style>
   <Style Selector="Button.surfaceIcon:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{StaticResource SurfaceAppBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceAppBrush}" />
   </Style>
 
   <!-- Line icons (Path) share one stroke language -->
@@ -188,8 +200,8 @@
     <Setter Property="BorderThickness" Value="1.5" />
   </Style>
   <Style Selector="Border.stepBadge.done">
-    <Setter Property="Background" Value="{StaticResource KodakRedBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource KodakRedBrush}" />
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
   </Style>
   <Style Selector="Border.stepBadge TextBlock">
     <Setter Property="FontSize" Value="12.5" />
@@ -225,7 +237,7 @@
 
   <!-- Destination path + example path boxes -->
   <Style Selector="Border.inset">
-    <Setter Property="Background" Value="{StaticResource SurfaceAppBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceAppBrush}" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="12,10" />
   </Style>
@@ -236,10 +248,10 @@
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
-  <!-- "Kodak Charmera" call-outs: warm Kodak-yellow tint -->
+  <!-- "Kodak Charmera" call-outs: a soft tint of the camera's color -->
   <Style Selector="Border.charmeraBadge">
-    <Setter Property="Background" Value="#FFF4D6" />
-    <Setter Property="BorderBrush" Value="#F5D98B" />
+    <Setter Property="Background" Value="{DynamicResource TintBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TintBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="10,6" />
@@ -253,6 +265,31 @@
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="MaxWidth" Value="400" />
+  </Style>
+
+  <!-- Camera picker: the seven Charmeras as a compact grid; the chosen one gets an accent ring. -->
+  <Style Selector="ListBox.cameraPicker">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ListBox.cameraPicker ListBoxItem">
+    <Setter Property="Padding" Value="5" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="ListBox.cameraPicker ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBox.cameraPicker ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceAppBrush}" />
+  </Style>
+  <Style Selector="ListBox.cameraPicker ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource TintBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentInkBrush}" />
   </Style>
 
   <!-- Thumbnail grid: strip the default Fluent selection/hover chrome so our own
@@ -277,7 +314,7 @@
     <Setter Property="BorderThickness" Value="1.5" />
   </Style>
   <Style Selector="ListBoxItem:selected Border.photoCard">
-    <Setter Property="BorderBrush" Value="{StaticResource KodakRedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentInkBrush}" />
     <Setter Property="BorderThickness" Value="2.5" />
   </Style>
 

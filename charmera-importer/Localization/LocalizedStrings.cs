@@ -31,6 +31,13 @@ public sealed class LocalizedStrings : ObservableObject
 
     private string Get(string key) => map.TryGetValue(key, out var value) ? value : key;
 
+    // Lookup by key, for data-driven text (camera names). Bindings to it refresh on language change
+    // like every other property, because Apply() raises "all properties changed".
+    public string this[string key] => Get(key);
+
+    public string CameraPickerLabel => Get("Camera_PickerLabel");
+    public string CameraPickerHint => Get("Camera_PickerHint");
+
     public string DevicePlaceholder => Get("Header_DevicePlaceholder");
     public string RefreshTooltip => Get("Header_RefreshTooltip");
 

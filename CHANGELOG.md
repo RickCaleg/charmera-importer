@@ -9,6 +9,16 @@ Release notes on GitHub are generated from this file — every release needs a
 
 ## [Unreleased]
 
+### Added
+
+- **Pick your Charmera, and the app wears its colors.** A new *Your Charmera* picker at the top
+  of the left panel shows all seven designs of the first collection (classic yellow, red, gray,
+  geometric white, black rainbow, blue and the transparent secret edition) as vector
+  illustrations. Choosing yours recolors the app: header, buttons, check boxes and progress bars
+  take the camera's accent, the header carries its signature stripes, and the "connect your
+  camera" screen shows it full size. The change is eased in and remembered; until you pick one,
+  the app keeps its original Kodak look. Every palette is tested for readable contrast.
+
 ## [0.5.2] - 2026-09-19
 
 ### Fixed

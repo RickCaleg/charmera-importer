@@ -51,6 +51,7 @@ public partial class MainViewModel : ViewModelBase
     public IReadOnlyList<FolderOrganizationOption> OrganizationOptions { get; } = FolderOrganizationOption.All;
     public IReadOnlyList<NamingPresetOption> NamingPresets { get; } = NamingPresetOption.All;
     public IReadOnlyList<LanguageOption> AvailableLanguages { get; } = LanguageOption.All;
+    public IReadOnlyList<CameraVariant> CameraVariants { get; } = CameraVariant.All;
 
     [ObservableProperty]
     public partial ObservableCollection<RemovableDevice> Devices { get; set; } = new();
@@ -75,6 +76,16 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial LanguageOption SelectedLanguage { get; set; }
+
+    // The user's own Charmera; null until they pick one, which keeps the default Kodak look.
+    [ObservableProperty]
+    public partial CameraVariant? SelectedCameraVariant { get; set; }
+
+    public bool HasCameraVariant => SelectedCameraVariant is not null;
+    public ThemePalette Palette => SelectedCameraVariant?.Palette ?? ThemePalette.Classic;
+    public string CameraPickerCaption => SelectedCameraVariant is { } camera
+        ? LocalizedStrings.Instance[camera.NameKey]
+        : LocalizedStrings.Instance.CameraPickerHint;
 
     [ObservableProperty]
     public partial bool AppendOriginalFileName { get; set; } = true;
@@ -219,6 +230,7 @@ public partial class MainViewModel : ViewModelBase
         DestinationRootPath = initialSettings.DestinationRootPath;
         AppendOriginalFileName = initialSettings.AppendOriginalFileName;
         CheckForUpdatesAutomatically = initialSettings.CheckForUpdates;
+        SelectedCameraVariant = CameraVariant.FromId(initialSettings.CameraVariantId);
         suppressSettingsPersistence = false;
 
         LocalizedStrings.Instance.PropertyChanged += OnLocalizationChanged;
@@ -276,6 +288,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(UpdateActionLabel));
         OnPropertyChanged(nameof(CurrentVersionLabel));
         OnPropertyChanged(nameof(VersionOnlyLabel));
+        OnPropertyChanged(nameof(CameraPickerCaption));
         foreach (var photo in Photos)
         {
             photo.RefreshLocalizedText();
@@ -295,7 +308,8 @@ public partial class MainViewModel : ViewModelBase
             SelectedOrganizationOption.Value,
             SelectedNamingPreset.Value,
             AppendOriginalFileName,
-            CheckForUpdatesAutomatically);
+            CheckForUpdatesAutomatically,
+            SelectedCameraVariant?.Id);
 
         _ = settingsService.SaveAsync(settings);
     }
@@ -325,6 +339,15 @@ public partial class MainViewModel : ViewModelBase
     }
 
     partial void OnCheckForUpdatesAutomaticallyChanged(bool value) => PersistSettings();
+
+    // The app theme follows this: App.axaml.cs listens for the change and applies Palette.
+    partial void OnSelectedCameraVariantChanged(CameraVariant? value)
+    {
+        OnPropertyChanged(nameof(HasCameraVariant));
+        OnPropertyChanged(nameof(Palette));
+        OnPropertyChanged(nameof(CameraPickerCaption));
+        PersistSettings();
+    }
 
     partial void OnAvailableUpdateChanged(UpdateInfo? value)
     {

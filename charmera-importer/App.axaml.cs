@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using charmera_importer.Localization;
+using charmera_importer.Models;
 using charmera_importer.Services;
 using charmera_importer.ViewModels;
 using charmera_importer.Views;
@@ -48,21 +49,26 @@ public partial class App : Application
                 : LanguageOption.DetectSystem();
             LocalizedStrings.Instance.Apply(initialLanguage.Code);
 
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainViewModel(
-                    deviceService,
-                    new PhotoScannerService(),
-                    new ExifService(),
-                    new ThumbnailService(),
-                    new ImportService(hashingService, historyService),
-                    historyService,
-                    settingsService,
-                    new GitHubUpdateService(),
-                    initialSettings,
-                    initialLanguage,
-                    () => desktop.Shutdown()),
-            };
+            // Dress the app in the saved camera's colors before the first frame, so it never
+            // flashes the default look.
+            AppTheme.Apply(CameraVariant.FromId(initialSettings.CameraVariantId)?.Palette ?? ThemePalette.Classic, animate: false);
+
+            var viewModel = new MainViewModel(
+                deviceService,
+                new PhotoScannerService(),
+                new ExifService(),
+                new ThumbnailService(),
+                new ImportService(hashingService, historyService),
+                historyService,
+                settingsService,
+                new GitHubUpdateService(),
+                initialSettings,
+                initialLanguage,
+                () => desktop.Shutdown());
+
+            AppTheme.Follow(viewModel);
+
+            desktop.MainWindow = new MainWindow { DataContext = viewModel };
         }
 
         base.OnFrameworkInitializationCompleted();

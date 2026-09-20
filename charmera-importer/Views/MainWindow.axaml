@@ -4,6 +4,7 @@
         xmlns:models="using:charmera_importer.Models"
         xmlns:conv="using:Avalonia.Data.Converters"
         xmlns:c="using:charmera_importer.Converters"
+        xmlns:controls="using:charmera_importer.Controls"
         xmlns:loc="using:charmera_importer.Localization"
         xmlns:sys="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -15,7 +16,7 @@
         Width="1440" Height="900"
         MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource SurfaceAppBrush}"
+        Background="{DynamicResource SurfaceAppBrush}"
         Title="Charmera Importer">
 
     <Design.DataContext>
@@ -36,20 +37,27 @@
     <DockPanel>
 
         <!-- App bar -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceHeaderBrush}" Height="64">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource HeaderBrush}" Height="64">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="24,0,16,0">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
-                    <Border Width="12" Height="12" CornerRadius="3" Background="{StaticResource KodakRedBrush}"
-                            VerticalAlignment="Center" />
-                    <TextBlock Text="CHARMERA" FontSize="19" FontWeight="Bold" Foreground="White"
+                    <Panel VerticalAlignment="Center">
+                        <Border Width="12" Height="12" CornerRadius="3" Background="{DynamicResource AccentBrush}"
+                                IsVisible="{Binding !HasCameraVariant}" />
+                        <!-- Lens mark, in the header's own text color -->
+                        <Panel Width="22" Height="22" IsVisible="{Binding HasCameraVariant}">
+                            <Ellipse Stroke="{DynamicResource OnHeaderBrush}" StrokeThickness="2.4" />
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource OnHeaderBrush}" />
+                        </Panel>
+                    </Panel>
+                    <TextBlock Text="CHARMERA" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource OnHeaderBrush}"
                                LetterSpacing="2" VerticalAlignment="Center" />
-                    <TextBlock Text="{loc:Loc AppSubtitle}" FontSize="13" Foreground="#9A9AA2"
+                    <TextBlock Text="{loc:Loc AppSubtitle}" FontSize="13" Foreground="{DynamicResource OnHeaderMutedBrush}"
                                VerticalAlignment="Center" Margin="4,2,0,0" />
                 </StackPanel>
 
                 <Button Grid.Column="2" x:Name="SettingsButton" Classes="appBarIcon" VerticalAlignment="Center"
                         ToolTip.Tip="{loc:Loc SettingsTitle}">
-                    <PathIcon Width="20" Height="20" Foreground="#D4D4D8"
+                    <PathIcon Width="20" Height="20" Foreground="{DynamicResource OnHeaderBrush}"
                               Data="M19.32,9.97 L21.87,10.39 L21.87,13.61 L19.32,14.03 L18.61,15.75 L20.12,17.84 L17.84,20.12 L15.75,18.61 L14.03,19.32 L13.61,21.87 L10.39,21.87 L9.97,19.32 L8.25,18.61 L6.16,20.12 L3.88,17.84 L5.39,15.75 L4.68,14.03 L2.13,13.61 L2.13,10.39 L4.68,9.97 L5.39,8.25 L3.88,6.16 L6.16,3.88 L8.25,5.39 L9.97,4.68 L10.39,2.13 L13.61,2.13 L14.03,4.68 L15.75,5.39 L17.84,3.88 L20.12,6.16 L18.61,8.25 Z M15.2,12 A3.2,3.2 0 1 0 8.8,12 A3.2,3.2 0 1 0 15.2,12 Z" />
                     <Button.Flyout>
                         <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="settings">
@@ -85,7 +93,7 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <Border Background="{StaticResource SurfaceAppBrush}" CornerRadius="0,0,12,12"
+                                <Border Background="{DynamicResource SurfaceAppBrush}" CornerRadius="0,0,12,12"
                                         Padding="20,10">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <TextBlock Grid.Column="0" Classes="caption" VerticalAlignment="Center"
@@ -100,6 +108,9 @@
                 </Button>
             </Grid>
         </Border>
+
+        <!-- The camera's signature stripes (no height until a camera is chosen) -->
+        <controls:StripeBar DockPanel.Dock="Top" Colors="{Binding Palette.Stripe}" />
 
         <!-- Update bar -->
         <Border DockPanel.Dock="Top" Background="#FFF4D6" BorderBrush="#F5D98B" BorderThickness="0,0,0,1"
@@ -143,13 +154,36 @@
                 <ScrollViewer Grid.Row="0">
                     <StackPanel Margin="24,24,24,12">
 
+                        <!-- Which Charmera is yours: picking one dresses the whole app in its colors -->
+                        <StackPanel Spacing="8" Margin="0,0,0,24">
+                            <TextBlock Classes="fieldLabel" Text="{loc:Loc CameraPickerLabel}" />
+                            <ListBox Classes="cameraPicker" ItemsSource="{Binding CameraVariants}"
+                                     SelectedItem="{Binding SelectedCameraVariant}">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:CameraVariant">
+                                        <Border Background="Transparent"
+                                                ToolTip.Tip="{Binding, Converter={x:Static c:CameraNameConverter.Instance}}"
+                                                AutomationProperties.Name="{Binding, Converter={x:Static c:CameraNameConverter.Instance}}">
+                                            <controls:CameraIllustration Variant="{Binding}" Width="62" Height="30" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock Classes="caption" Text="{Binding CameraPickerCaption}" />
+                        </StackPanel>
+
                         <!-- Step 1: Camera -->
                         <Grid ColumnDefinitions="26,*" RowDefinitions="Auto,*">
                             <Border Grid.Row="0" Grid.Column="0" Classes="stepBadge"
                                     Classes.done="{Binding IsSourceStepDone}">
                                 <Panel>
                                     <TextBlock Text="1" IsVisible="{Binding !IsSourceStepDone}" />
-                                    <Path Width="11" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="2"
+                                    <Path Width="11" Height="9" Stretch="Uniform" Stroke="{DynamicResource OnAccentBrush}" StrokeThickness="2"
                                           StrokeLineCap="Round" StrokeJoin="Round" Data="M1,5 L4.5,8.5 L11,1"
                                           IsVisible="{Binding IsSourceStepDone}" />
                                 </Panel>
@@ -185,7 +219,7 @@
                                     Classes.done="{Binding IsDestinationStepDone}">
                                 <Panel>
                                     <TextBlock Text="2" IsVisible="{Binding !IsDestinationStepDone}" />
-                                    <Path Width="11" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="2"
+                                    <Path Width="11" Height="9" Stretch="Uniform" Stroke="{DynamicResource OnAccentBrush}" StrokeThickness="2"
                                           StrokeLineCap="Round" StrokeJoin="Round" Data="M1,5 L4.5,8.5 L11,1"
                                           IsVisible="{Binding IsDestinationStepDone}" />
                                 </Panel>
@@ -271,7 +305,7 @@
                                 <CheckBox Content="{loc:Loc DeleteAfterImport}"
                                           IsChecked="{Binding DeleteSourceAfterImport}" />
                                 <TextBlock Text="{loc:Loc DeleteAfterImportWarning}" TextWrapping="Wrap" FontSize="12"
-                                           Foreground="{StaticResource KodakRedBrush}" Margin="28,0,0,0"
+                                           Foreground="{StaticResource DangerBrush}" Margin="28,0,0,0"
                                            IsVisible="{Binding DeleteSourceAfterImport}" />
                             </StackPanel>
                         </Grid>
@@ -331,7 +365,7 @@
                                             BoxShadow="0 1 4 0 #14000000">
                                         <Grid RowDefinitions="146,Auto" Margin="12">
                                             <Grid Grid.Row="0">
-                                                <Border CornerRadius="9" Background="{StaticResource SurfaceAppBrush}"
+                                                <Border CornerRadius="9" Background="{DynamicResource SurfaceAppBrush}"
                                                         ClipToBounds="True">
                                                     <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
                                                 </Border>
@@ -372,8 +406,11 @@
                     <!-- Empty states: each one says what to do next -->
                     <StackPanel IsVisible="{Binding ShowNoDeviceState}" HorizontalAlignment="Center"
                                 VerticalAlignment="Center" Spacing="10" MaxWidth="340">
+                        <controls:CameraIllustration Variant="{Binding SelectedCameraVariant}" Width="240" Height="114"
+                                                     HorizontalAlignment="Center" Margin="0,0,0,10" />
                         <Border Width="72" Height="72" CornerRadius="36" Background="White"
-                                HorizontalAlignment="Center" Margin="0,0,0,6">
+                                HorizontalAlignment="Center" Margin="0,0,0,6"
+                                IsVisible="{Binding !HasCameraVariant}">
                             <Path Classes="lineIcon" Width="32" Height="28" Stroke="{StaticResource InkSecondaryBrush}"
                                   Data="M4,7.5 L7,7.5 L8.5,5.5 L15.5,5.5 L17,7.5 L20,7.5 A1.5,1.5 0 0 1 21.5,9 L21.5,18 A1.5,1.5 0 0 1 20,19.5 L4,19.5 A1.5,1.5 0 0 1 2.5,18 L2.5,9 A1.5,1.5 0 0 1 4,7.5 Z M15.5,13.5 A3.5,3.5 0 1 0 8.5,13.5 A3.5,3.5 0 1 0 15.5,13.5 Z" />
                         </Border>
@@ -419,7 +456,7 @@
                     </Grid>
                     <ScrollViewer Grid.Row="1">
                         <StackPanel Margin="24,8,24,24" Spacing="6" DataContext="{Binding SelectedPhoto}" x:DataType="vm:PhotoItemViewModel">
-                            <Border CornerRadius="10" ClipToBounds="True" Background="{StaticResource SurfaceAppBrush}"
+                            <Border CornerRadius="10" ClipToBounds="True" Background="{DynamicResource SurfaceAppBrush}"
                                     Height="180" Margin="0,0,0,10">
                                 <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
                             </Border>
